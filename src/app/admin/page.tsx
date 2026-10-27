@@ -20,7 +20,7 @@ interface AB {
   word_count: number | null;
   rights: string | null;
 }
-type Tab = 'library' | 'add' | 'flags' | 'learners' | 'usage';
+type Tab = 'library' | 'starter' | 'add' | 'flags' | 'learners' | 'usage';
 
 export default function Admin() {
   const { me } = useApp();
@@ -35,6 +35,7 @@ export default function Admin() {
     );
   const tabs: [Tab, string][] = [
     ['library', 'Library'],
+    ['starter', 'Starter library'],
     ['add', 'Add a book'],
     ['flags', 'Flagged lessons'],
     ['learners', 'Learners'],
@@ -59,6 +60,7 @@ export default function Admin() {
         ))}
       </nav>
       {tab === 'library' && <LibraryTab />}
+      {tab === 'starter' && <StarterTab />}
       {tab === 'add' && <AddTab onDone={() => setTab('library')} />}
       {tab === 'flags' && <FlagsTab />}
       {tab === 'learners' && <LearnersTab />}
@@ -499,5 +501,132 @@ function UsageTab() {
         <span className="tiny muted">Estimated from Claude Sonnet 5.5 list prices. The phone&apos;s voice is free. Journals and actions are never shown here.</span>
       </section>
     </div>
+  );
+}
+
+interface CatBook {
+  slug: string;
+  title: string;
+  author?: string;
+  subject: string;
+  url?: string;
+  verified?: boolean;
+  sample?: boolean;
+  needsOwnCopy?: boolean;
+  note?: string;
+  imported: boolean;
+}
+
+function StarterTab() {
+  const [books, setBooks] = useState<CatBook[] | null>(null);
+  const [own, setOwn] = useState<{ title: string; note: string }[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [log, setLog] = useState<string[]>([]);
+  const load = useCallback(() => {
+    api<{ books: CatBook[]; ownBooks: { title: string; note: string }[] }>('/api/admin/library')
+      .then((r) => {
+        setBooks(r.books);
+        setOwn(r.ownBooks);
+      })
+      .catch((e) => setError(e.message));
+  }, []);
+  useEffect(load, [load]);
+
+  const add = (line: string) => setLog((l) => [...l, line]);
+  const importList = async (list: CatBook[]) => {
+    setBusy(true);
+    setLog([]);
+    for (const b of list) {
+      add(`${b.title}: importing…`);
+      try {
+        const r = await api<{ ok: boolean; note: string }>('/api/admin/library', { method: 'POST', body: { slug: b.slug } });
+        add(`${b.title}: ${r.ok ? '✓' : '✗'} ${r.note}`);
+      } catch (e) {
+        add(`${b.title}: ✗ ${(e as Error).message}`);
+      }
+    }
+    setBusy(false);
+    load();
+  };
+  const samples = async () => {
+    setBusy(true);
+    try {
+      const r = await api<{ results: { slug: string; ok: boolean; note: string }[] }>('/api/admin/library', { method: 'POST', body: { samples: true } });
+      setLog(r.results.map((x) => `${x.slug}: ${x.ok ? '✓' : '✗'} ${x.note}`));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setBusy(false);
+  };
+
+  if (!books) return error ? <ErrorNote error={error} /> : <Loading />;
+  const ready = books.filter((b) => !b.imported && (b.url || b.needsOwnCopy));
+  const sampleBooks = books.filter((b) => b.sample && !b.imported);
+  return (
+    <section className="col">
+      <ErrorNote error={error} />
+      <div className="card col">
+        <p className="small" style={{ margin: 0 }}>
+          The catalogue agreed in the spec. Importing downloads each public-domain text, splits it into chapters and publishes it. Business titles are added as
+          &quot;bring your own copy&quot;.
+        </p>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn small" disabled={busy || !sampleBooks.length} onClick={() => importList(sampleBooks)}>
+            1 · Import the 5 sample books
+          </button>
+          <button className="btn small" disabled={busy} onClick={samples}>
+            2 · Attach sample lessons
+          </button>
+          <button className="btn small ghost" disabled={busy || !ready.length} onClick={() => importList(ready)}>
+            Import everything else ({ready.length})
+          </button>
+        </div>
+        {own.map((o) => (
+          <p key={o.title} className="tiny muted" style={{ margin: 0 }}>
+            <b>{o.title}:</b> {o.note}
+          </p>
+        ))}
+        {log.length > 0 && (
+          <pre className="tiny" style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
+            {log.join('\n')}
+          </pre>
+        )}
+      </div>
+      <div className="tablewrap card" style={{ padding: 0 }}>
+        <table className="admin">
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Subject</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {books.map((b) => (
+              <tr key={b.slug}>
+                <td>
+                  <span style={{ fontWeight: 600 }}>{b.title}</span>
+                  {b.sample && <span className="chip good" style={{ marginLeft: 6 }}>Sample</span>}
+                  <div className="tiny muted">{b.author}</div>
+                </td>
+                <td className="small">{SUBJECTS.find((s) => s.id === b.subject)?.name}</td>
+                <td className="small">
+                  {b.imported ? (
+                    <span className="chip good">In the library</span>
+                  ) : b.needsOwnCopy ? (
+                    <span className="muted">Bring your own copy</span>
+                  ) : b.url ? (
+                    <span className="muted">{b.verified ? 'Link tested' : 'Link to check'}</span>
+                  ) : (
+                    <span className="chip warn">{b.note || 'Needs a link'}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

@@ -1,0 +1,229 @@
+{
+ "slug": "bennett-24-hours",
+ "fingerprint": null,
+ "chapterIdx": 1,
+ "part": "full",
+ "level": "normal",
+ "lang": "english",
+ "versions": {
+  "key": {
+   "title": "The Daily Miracle",
+   "main_idea": "Time is the one resource everyone receives in exactly the same amount: twenty-four hours a day. It cannot be bought, stolen or borrowed from tomorrow, so the quality of your life depends on how you spend the hours you already have.",
+   "sections": [],
+   "key_lessons": [
+    {
+     "text": "Everyone gets the same twenty-four hours. Wealth and talent do not earn anyone an extra hour.",
+     "source_snippet": "no one receives either more or less than you receive"
+    },
+    {
+     "text": "Time is worth more than money. You can usually earn more money, but you cannot buy one more minute.",
+     "source_snippet": "you cannot buy yourself a minute more time than I have, or the cat by the fire has"
+    },
+    {
+     "text": "You cannot borrow from the future. The only time you can waste is the moment you are in.",
+     "source_snippet": "You can only waste the passing moment. You cannot waste to-morrow; it is kept for you."
+    },
+    {
+     "text": "Health, money, happiness and self-respect all have to be built out of these daily hours.",
+     "source_snippet": "Out of it you have to spin health, pleasure, money, content, respect, and the evolution of your immortal soul"
+    },
+    {
+     "text": "Waiting for \"more time\" is a trap. You already have all the time there is.",
+     "source_snippet": "We never shall have any more time. We have, and we have always had, all the time there is."
+    }
+   ],
+   "examples": [],
+   "takeaway": "Stop waiting for spare time; it will never arrive. Decide how to spend the twenty-four hours you already have, starting tomorrow morning.",
+   "quotes": [],
+   "quick_check": {
+    "question": "Why does Bennett say time is more precious than money?",
+    "options": [
+     "Money can usually be earned again, but nobody can buy extra time",
+     "Time can be saved up and used later",
+     "Busy people are given more useful hours"
+    ],
+    "answer_index": 0,
+    "simpler_explanation": "Money can be earned again. Time cannot. Every person gets the same 24 hours each day, and nobody can buy even one extra minute."
+   },
+   "reflection_questions": [
+    "Where in your day do hours slip away without you really choosing how to spend them?",
+    "What have you been postponing \"until I have a little more time\"?",
+    "If tomorrow's twenty-four hours were a fixed salary, what would you spend your first free hour on?"
+   ],
+   "coverage_note": null
+  },
+  "examples": {
+   "title": "The Daily Miracle",
+   "main_idea": "Time is the one resource everyone receives in exactly the same amount: twenty-four hours a day. It cannot be bought, stolen or borrowed from tomorrow, so the quality of your life depends on how you spend the hours you already have.",
+   "sections": [],
+   "key_lessons": [
+    {
+     "text": "Everyone gets the same twenty-four hours. Wealth and talent do not earn anyone an extra hour.",
+     "source_snippet": "no one receives either more or less than you receive"
+    },
+    {
+     "text": "Time is worth more than money. You can usually earn more money, but you cannot buy one more minute.",
+     "source_snippet": "you cannot buy yourself a minute more time than I have, or the cat by the fire has"
+    },
+    {
+     "text": "You cannot borrow from the future. The only time you can waste is the moment you are in.",
+     "source_snippet": "You can only waste the passing moment. You cannot waste to-morrow; it is kept for you."
+    },
+    {
+     "text": "Health, money, happiness and self-respect all have to be built out of these daily hours.",
+     "source_snippet": "Out of it you have to spin health, pleasure, money, content, respect, and the evolution of your immortal soul"
+    },
+    {
+     "text": "Waiting for \"more time\" is a trap. You already have all the time there is.",
+     "source_snippet": "We never shall have any more time. We have, and we have always had, all the time there is."
+    }
+   ],
+   "examples": [
+    {
+     "text": "Bennett opens with a man who earns well but \"fritters\" his income: a new suit with an old hat, a fine necktie with baggy trousers. We often manage our time the same way.",
+     "origin": "book",
+     "source_snippet": "New suit--old hat! Magnificent necktie--baggy trousers!"
+    },
+    {
+     "text": "Newspapers, he notes, print advice on living on a small sum of money, but never on living on twenty-four hours a day.",
+     "origin": "book",
+     "source_snippet": "But I have never seen an essay, \"How to live on twenty-four hours a day.\""
+    },
+    {
+     "text": "Think of someone who says, \"I'll start exercising when work calms down.\" Work rarely calms down, so the plan waits forever.",
+     "origin": "teacher",
+     "source_snippet": null
+    }
+   ],
+   "takeaway": "Stop waiting for spare time; it will never arrive. Decide how to spend the twenty-four hours you already have, starting tomorrow morning.",
+   "quotes": [
+    {
+     "text": "We never shall have any more time. We have, and we have always had, all the time there is.",
+     "translation": null
+    }
+   ],
+   "quick_check": {
+    "question": "Why does Bennett say time is more precious than money?",
+    "options": [
+     "Money can usually be earned again, but nobody can buy extra time",
+     "Time can be saved up and used later",
+     "Busy people are given more useful hours"
+    ],
+    "answer_index": 0,
+    "simpler_explanation": "Money can be earned again. Time cannot. Every person gets the same 24 hours each day, and nobody can buy even one extra minute."
+   },
+   "reflection_questions": [
+    "Where in your day do hours slip away without you really choosing how to spend them?",
+    "What have you been postponing \"until I have a little more time\"?",
+    "If tomorrow's twenty-four hours were a fixed salary, what would you spend your first free hour on?"
+   ],
+   "coverage_note": null
+  },
+  "complete": {
+   "title": "The Daily Miracle",
+   "main_idea": "Time is the one resource everyone receives in exactly the same amount: twenty-four hours a day. It cannot be bought, stolen or borrowed from tomorrow, so the quality of your life depends on how you spend the hours you already have.",
+   "sections": [
+    {
+     "heading": "The man who wastes a good income",
+     "explanation": "Bennett starts with a familiar complaint about a man who earns enough but never seems to get anything out of his money. His home, clothes and dinners are half good and half shabby. We laugh at him, Bennett hints, while managing our time in exactly the same careless way.",
+     "examples": [
+      {
+       "text": "The picture of the \"new suit--old hat\" shows spending without a plan.",
+       "origin": "book",
+       "source_snippet": "New suit--old hat! Magnificent necktie--baggy trousers!"
+      }
+     ]
+    },
+    {
+     "heading": "Time is more than money",
+     "explanation": "People write endlessly about living on a fixed income of money, but no one writes about living on a fixed income of time. Bennett says the proverb \"time is money\" actually understates the case: with time you can usually get money, but no amount of money buys more time.",
+     "examples": [
+      {
+       "text": "Even a wealthy person cannot buy a minute more than anyone else, or than \"the cat by the fire\".",
+       "origin": "book",
+       "source_snippet": "you cannot buy yourself a minute more time than I have, or the cat by the fire has"
+      }
+     ]
+    },
+    {
+     "heading": "A daily miracle, shared equally",
+     "explanation": "Every morning your \"purse\" is refilled with twenty-four hours. No one can steal them, and nobody gets more or less than you. Bennett calls this a perfect democracy: genius earns no extra hour, and wasting time is never punished by having it cut off.",
+     "examples": [
+      {
+       "text": "He puts it plainly: there is no upper class when it comes to time.",
+       "origin": "book",
+       "source_snippet": "In the realm of time there is no aristocracy of wealth, and no aristocracy of intellect."
+      }
+     ]
+    },
+    {
+     "heading": "You cannot borrow from tomorrow",
+     "explanation": "Unlike money, time cannot be borrowed in advance and you cannot fall into debt. Tomorrow is kept safe for you; the only time you can ever waste is the present moment. That makes today the only place where change can happen.",
+     "examples": [
+      {
+       "text": "A student who plans to \"make up for it next week\" is borrowing time that does not yet exist; only this week can actually be used.",
+       "origin": "teacher",
+       "source_snippet": null
+      }
+     ]
+    },
+    {
+     "heading": "Everything is built from these hours",
+     "explanation": "Health, pleasure, money, contentment and self-respect must all be spun out of the same daily twenty-four hours. If money runs short you can earn more, but if your hours do not cover what matters, your life becomes muddled. That is why using time well is urgent, not optional.",
+     "examples": []
+    },
+    {
+     "heading": "Stop waiting for more time",
+     "explanation": "Most of us keep saying, \"I shall alter that when I have a little more time.\" Bennett's answer is blunt: we will never have more time than we have now. Accepting this simple truth is what led him to look closely at how he spent each day.",
+     "examples": []
+    }
+   ],
+   "key_lessons": [
+    {
+     "text": "Everyone gets the same twenty-four hours. Wealth and talent do not earn anyone an extra hour.",
+     "source_snippet": "no one receives either more or less than you receive"
+    },
+    {
+     "text": "Time is worth more than money. You can usually earn more money, but you cannot buy one more minute.",
+     "source_snippet": "you cannot buy yourself a minute more time than I have, or the cat by the fire has"
+    },
+    {
+     "text": "You cannot borrow from the future. The only time you can waste is the moment you are in.",
+     "source_snippet": "You can only waste the passing moment. You cannot waste to-morrow; it is kept for you."
+    },
+    {
+     "text": "Health, money, happiness and self-respect all have to be built out of these daily hours.",
+     "source_snippet": "Out of it you have to spin health, pleasure, money, content, respect, and the evolution of your immortal soul"
+    },
+    {
+     "text": "Waiting for \"more time\" is a trap. You already have all the time there is.",
+     "source_snippet": "We never shall have any more time. We have, and we have always had, all the time there is."
+    }
+   ],
+   "examples": [],
+   "takeaway": "Stop waiting for spare time; it will never arrive. Decide how to spend the twenty-four hours you already have, starting tomorrow morning.",
+   "quotes": [
+    {
+     "text": "We never shall have any more time. We have, and we have always had, all the time there is.",
+     "translation": null
+    }
+   ],
+   "quick_check": {
+    "question": "Why does Bennett say time is more precious than money?",
+    "options": [
+     "Money can usually be earned again, but nobody can buy extra time",
+     "Time can be saved up and used later",
+     "Busy people are given more useful hours"
+    ],
+    "answer_index": 0,
+    "simpler_explanation": "Money can be earned again. Time cannot. Every person gets the same 24 hours each day, and nobody can buy even one extra minute."
+   },
+   "reflection_questions": [
+    "Where in your day do hours slip away without you really choosing how to spend them?",
+    "What have you been postponing \"until I have a little more time\"?",
+    "If tomorrow's twenty-four hours were a fixed salary, what would you spend your first free hour on?"
+   ],
+   "coverage_note": null
+  }
+ }
+}

@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SHRAVAN — Listen. Reflect. Apply.
 
-## Getting Started
+*by AAYAMIK*
 
-First, run the development server:
+A phone and iPad web app (installable as a PWA) that teaches books one chapter at a time:
+**Listen** to a spoken lesson, **Reflect** with a few questions kept in a private journal, and **Apply** with small measurable actions and an end-of-book plan.
+
+The full product spec lives in the SHRAVAN Product Spec doc. This README covers running and deploying the app.
+
+## How it is built
+
+| Part | Choice |
+|---|---|
+| App | Next.js 16 (App Router), React 19, TypeScript |
+| Sign-in, database, file storage | Supabase (Google sign-in + 6-digit email code) |
+| Lessons, actions, plans, Ask, Read-along | Claude API (`claude-sonnet-5-5`), written once per version and saved |
+| Voice | The phone's own voice (Web Speech API), free |
+| Hosting | Vercel (daily cron for timed-free books and reminders) |
+| Payments | Razorpay subscriptions, switched off (`PAYMENTS_ENABLED=false`) |
+
+Key rules the code enforces:
+
+- Every lesson version (3 modes × 3 English levels × 3 languages) is generated once, saved in `chapter_versions` and reused for every learner.
+- Every "from the book" quote or example is checked word for word against the chapter text; anything that does not match is removed (`verifyLesson` in `src/lib/ai.ts`).
+- Free learners get chapter 1 (max 7 pages) of up to 5 books in their lifetime. A subscription unlocks everything. The admin can make any book free for N days.
+- Journals, actions and plans are private to each learner.
+
+## Setting it up (one time)
+
+### 1. Supabase
+1. Create a free project at supabase.com.
+2. Open **SQL Editor**, paste all of `supabase/schema.sql` and run it. This creates the tables and the private `uploads` storage bucket.
+3. **Authentication → Providers**: turn on **Google** (needs a Google Cloud OAuth client; add `https://<your-project>.supabase.co/auth/v1/callback` as the redirect URL) and keep **Email** on.
+4. **Authentication → Email templates → Magic link**: make the email show the code with `{{ .Token }}`, e.g. *"Your SHRAVAN code is {{ .Token }}"*.
+5. **Authentication → URL configuration**: set the Site URL to your Vercel address and add it to Redirect URLs.
+
+### 2. Vercel
+1. Import this GitHub repository at vercel.com → **Add New → Project**.
+2. Add the environment variables from `.env.example` (Settings → Environment Variables).
+3. Deploy. The daily cron in `vercel.json` runs `/api/cron/daily`.
+
+### 3. First admin steps
+1. Sign in with an email listed in `ADMIN_EMAILS`, then open `/admin`.
+2. **Starter library** tab → *Import the 5 sample books*.
+3. **Add a book** tab → upload *The 100 Decisions Before the First Brick* PDF, copyright status *My own work*, subject *Business & Creative Practice*.
+4. **Starter library** tab → *Attach sample lessons*. Chapter 1 of one book per subject now has all 3 modes ready (English, Normal level).
+5. Check the books in the **Library** tab and publish or unpublish as needed. *Import everything else* adds the rest of the catalogue.
+
+## Working on the code
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # fill in the values
+npm run dev                  # http://localhost:3000
+npm test                     # unit tests (chapter detection, quote checking, library data)
+npm run build                # production build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Folder | What is in it |
+|---|---|
+| `src/app` | Screens (`page.tsx`) and API routes (`api/**/route.ts`) |
+| `src/lib` | Text extraction, chapter detection, AI prompts, access rules, saved versions |
+| `src/components` | Shared UI, the voice player, mic button |
+| `supabase/schema.sql` | Database tables and storage |
+| `data/library.json` | The starter catalogue (6 subjects) |
+| `data/samples/*.json` | Ready-made sample lessons (built by `scripts/build_samples.py`) |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Copyrighted book text (including the author's own PDF) is never committed; it lives only in Supabase.

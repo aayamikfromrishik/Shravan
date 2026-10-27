@@ -1,0 +1,320 @@
+{
+ "about": "SHRAVAN starter library. Links marked verified were downloaded and tested; others are Project Gutenberg links to check on first import. Books with no link are added by the admin later.",
+ "books": [
+  {
+   "slug": "bennett-24-hours",
+   "title": "How to Live on 24 Hours a Day",
+   "author": "Arnold Bennett",
+   "subject": "habits",
+   "url": "https://raw.githubusercontent.com/GITenberg/How-to-Live-on-24-Hours-a-Day_2274/master/2274.txt",
+   "verified": true,
+   "sample": true
+  },
+  {
+   "slug": "franklin-autobiography",
+   "title": "Autobiography of Benjamin Franklin",
+   "author": "Benjamin Franklin",
+   "subject": "habits",
+   "url": "https://www.gutenberg.org/cache/epub/20203/pg20203.txt"
+  },
+  {
+   "slug": "smiles-self-help",
+   "title": "Self-Help",
+   "author": "Samuel Smiles",
+   "subject": "habits",
+   "url": "https://raw.githubusercontent.com/GITenberg/Self-Help-with-Illustrations-of-Conduct-and-Perseverance_935/master/935-0.txt",
+   "verified": true
+  },
+  {
+   "slug": "marden-pushing-to-the-front",
+   "title": "Pushing to the Front",
+   "author": "Orison Swett Marden",
+   "subject": "habits",
+   "note": "Find a plain-text link and add it."
+  },
+  {
+   "slug": "thoreau-walden",
+   "title": "Walden",
+   "author": "Henry David Thoreau",
+   "subject": "habits",
+   "url": "https://www.gutenberg.org/cache/epub/205/pg205.txt"
+  },
+  {
+   "slug": "marcus-meditations",
+   "title": "Meditations",
+   "author": "Marcus Aurelius",
+   "subject": "mind",
+   "edition": "Translated by George Long",
+   "url": "https://raw.githubusercontent.com/GITenberg/Meditations_2680/master/2680.txt",
+   "verified": true
+  },
+  {
+   "slug": "epictetus-enchiridion",
+   "title": "The Enchiridion",
+   "author": "Epictetus",
+   "subject": "mind",
+   "url": "https://raw.githubusercontent.com/GITenberg/The-Enchiridion_45109/master/45109.txt",
+   "verified": true
+  },
+  {
+   "slug": "seneca-shortness-of-life",
+   "title": "On the Shortness of Life",
+   "author": "Seneca",
+   "subject": "mind",
+   "note": "Use a translation published before 1931 (e.g. Aubrey Stewart, 1900)."
+  },
+  {
+   "slug": "allen-as-a-man-thinketh",
+   "title": "As a Man Thinketh",
+   "author": "James Allen",
+   "subject": "mind",
+   "url": "https://raw.githubusercontent.com/GITenberg/As-a-Man-Thinketh_4507/master/4507.txt",
+   "verified": true,
+   "sample": true
+  },
+  {
+   "slug": "boethius-consolation",
+   "title": "The Consolation of Philosophy",
+   "author": "Boethius",
+   "subject": "mind",
+   "edition": "Translated by H. R. James",
+   "url": "https://www.gutenberg.org/cache/epub/14328/pg14328.txt"
+  },
+  {
+   "slug": "wattles-getting-rich",
+   "title": "The Science of Getting Rich",
+   "author": "Wallace D. Wattles",
+   "subject": "work",
+   "note": "Find a plain-text link and add it."
+  },
+  {
+   "slug": "conwell-acres-of-diamonds",
+   "title": "Acres of Diamonds",
+   "author": "Russell H. Conwell",
+   "subject": "work",
+   "url": "https://www.gutenberg.org/cache/epub/368/pg368.txt"
+  },
+  {
+   "slug": "franklin-way-to-wealth",
+   "title": "The Way to Wealth",
+   "author": "Benjamin Franklin",
+   "subject": "work",
+   "note": "Find a plain-text link and add it."
+  },
+  {
+   "slug": "barnum-money-getting",
+   "title": "The Art of Money Getting",
+   "author": "P. T. Barnum",
+   "subject": "work",
+   "url": "https://www.gutenberg.org/cache/epub/8581/pg8581.txt"
+  },
+  {
+   "slug": "sun-tzu-art-of-war",
+   "title": "The Art of War",
+   "author": "Sun Tzu",
+   "subject": "work",
+   "edition": "Translated by Lionel Giles",
+   "url": "https://raw.githubusercontent.com/GITenberg/The-Art-of-War_132/master/132.txt",
+   "verified": true,
+   "sample": true
+  },
+  {
+   "slug": "art-of-public-speaking",
+   "title": "The Art of Public Speaking",
+   "author": "Dale Carnegie & J. Berg Esenwein",
+   "subject": "communication",
+   "url": "https://raw.githubusercontent.com/GITenberg/The-Art-of-Public-Speaking_16317/master/16317.txt",
+   "verified": true,
+   "sample": true
+  },
+  {
+   "slug": "emerson-essays",
+   "title": "Essays, First Series",
+   "author": "Ralph Waldo Emerson",
+   "subject": "communication",
+   "url": "https://www.gutenberg.org/cache/epub/2944/pg2944.txt"
+  },
+  {
+   "slug": "bacon-essays",
+   "title": "Essays",
+   "author": "Francis Bacon",
+   "subject": "communication",
+   "url": "https://www.gutenberg.org/cache/epub/575/pg575.txt"
+  },
+  {
+   "slug": "gibran-prophet",
+   "title": "The Prophet",
+   "author": "Kahlil Gibran",
+   "subject": "communication",
+   "url": "https://www.gutenberg.org/cache/epub/58585/pg58585.txt"
+  },
+  {
+   "slug": "chesterfield-letters",
+   "title": "Letters to His Son",
+   "author": "Lord Chesterfield",
+   "subject": "communication",
+   "note": "Find a plain-text link and add it."
+  },
+  {
+   "slug": "win-without-pitching",
+   "title": "The Win Without Pitching Manifesto",
+   "author": "Blair Enns",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "psychology-of-money",
+   "title": "The Psychology of Money",
+   "author": "Morgan Housel",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "never-split-the-difference",
+   "title": "Never Split the Difference",
+   "author": "Chris Voss",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "influence",
+   "title": "Influence",
+   "author": "Robert B. Cialdini",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "business-of-design",
+   "title": "The Business of Design",
+   "author": "Keith Granet",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "profit-first",
+   "title": "Profit First",
+   "author": "Mike Michalowicz",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "gita-arnold",
+   "title": "Bhagavad Gita (The Song Celestial)",
+   "author": "Translated by Edwin Arnold",
+   "subject": "spiritual",
+   "url": "https://www.gutenberg.org/cache/epub/2388/pg2388.txt"
+  },
+  {
+   "slug": "ramayana-griffith",
+   "title": "Ramayana",
+   "author": "Valmiki, translated by Ralph T. H. Griffith",
+   "subject": "spiritual",
+   "url": "https://www.gutenberg.org/cache/epub/24869/pg24869.txt"
+  },
+  {
+   "slug": "ramcharitmanas-growse",
+   "title": "Ramcharitmanas",
+   "author": "Tulsidas, translated by F. S. Growse",
+   "subject": "spiritual",
+   "note": "Find a plain-text link and add it."
+  },
+  {
+   "slug": "mahabharata-ganguli",
+   "title": "Mahabharata",
+   "author": "Translated by Kisari Mohan Ganguli",
+   "subject": "spiritual",
+   "note": "Published in many volumes; add each parva as its own link."
+  },
+  {
+   "slug": "quran-pickthall",
+   "title": "The Quran",
+   "author": "Translated by M. Pickthall",
+   "subject": "spiritual",
+   "note": "Find a plain-text link and add it."
+  },
+  {
+   "slug": "bible-kjv",
+   "title": "The Bible (King James Version)",
+   "subject": "spiritual",
+   "url": "https://www.gutenberg.org/cache/epub/10/pg10.txt"
+  },
+  {
+   "slug": "guru-granth-sahib",
+   "title": "Guru Granth Sahib",
+   "author": "Translated by M. A. Macauliffe",
+   "subject": "spiritual",
+   "note": "Copyright check pending: do not add until confirmed."
+  },
+  {
+   "slug": "zend-avesta",
+   "title": "Zend-Avesta",
+   "author": "Translated by J. Darmesteter & L. H. Mills",
+   "subject": "spiritual",
+   "note": "Find a plain-text link and add it."
+  },
+  {
+   "slug": "upanishads",
+   "title": "The Upanishads",
+   "author": "Translated by Swami Paramananda",
+   "subject": "spiritual",
+   "url": "https://www.gutenberg.org/cache/epub/3283/pg3283.txt"
+  },
+  {
+   "slug": "dhammapada-muller",
+   "title": "Dhammapada",
+   "author": "Translated by F. Max Müller",
+   "subject": "spiritual",
+   "url": "https://www.gutenberg.org/cache/epub/2017/pg2017.txt"
+  },
+  {
+   "slug": "jain-sutras",
+   "title": "Jaina Sutras",
+   "author": "Translated by Hermann Jacobi",
+   "subject": "spiritual",
+   "note": "Find a plain-text link and add it."
+  },
+  {
+   "slug": "tao-te-ching-legge",
+   "title": "Tao Te Ching",
+   "author": "Lao Tzu, translated by James Legge",
+   "subject": "spiritual",
+   "url": "https://raw.githubusercontent.com/GITenberg/The-Tao-Teh-King-or-the-Tao-and-its-Characteristics_216/master/216.txt",
+   "verified": true
+  },
+  {
+   "slug": "songs-of-kabir",
+   "title": "Songs of Kabir",
+   "author": "Translated by Rabindranath Tagore",
+   "subject": "spiritual",
+   "url": "https://raw.githubusercontent.com/GITenberg/Songs-of-Kabir_6519/master/6519.txt",
+   "verified": true,
+   "skipUntil": "KABIR'S POEMS",
+   "sample": true,
+   "chapterPrefix": "Poems "
+  },
+  {
+   "slug": "karma-yoga",
+   "title": "Karma Yoga",
+   "author": "Swami Vivekananda",
+   "subject": "spiritual",
+   "note": "Find a plain-text link and add it."
+  },
+  {
+   "slug": "tagore-sadhana",
+   "title": "Sadhana",
+   "author": "Rabindranath Tagore",
+   "subject": "spiritual",
+   "url": "https://www.gutenberg.org/cache/epub/6842/pg6842.txt"
+  }
+ ],
+ "ownBooks": [
+  {
+   "slug": "100-decisions-before-the-first-brick",
+   "title": "The 100 Decisions Before the First Brick",
+   "author": "Ar. Saptarshi Kapri",
+   "subject": "business",
+   "rights": "own_work",
+   "note": "Your own book: upload the PDF from Admin → Add (copyright: My own work). Its sample lessons attach automatically."
+  }
+ ]
+}
