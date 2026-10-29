@@ -4,7 +4,8 @@ import { AwsClient } from 'aws4fetch';
 import { db } from './server';
 
 const R2 = {
-  account: process.env.R2_ACCOUNT_ID?.trim(),
+  // Accept the plain ID, or the whole address pasted by mistake.
+  account: process.env.R2_ACCOUNT_ID?.trim().replace(/^https?:\/\//, '').split('.')[0].replace(/\/.*$/, ''),
   key: process.env.R2_ACCESS_KEY_ID?.trim(),
   secret: process.env.R2_SECRET_ACCESS_KEY?.trim(),
   bucket: process.env.R2_BUCKET?.trim() || 'shravan-files',
