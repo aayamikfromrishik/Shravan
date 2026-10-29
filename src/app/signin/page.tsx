@@ -21,14 +21,17 @@ export default function SignIn() {
   const google = async () => {
     setError(null);
     const { error } = await supabase().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/' } });
-    if (error) setError('Google sign-in is not available right now. Please use email.');
+    if (error) setError(`Google sign-in is not available right now. Please use email. (${error.message})`);
   };
   const sendCode = async () => {
     setBusy(true);
     setError(null);
     const { error } = await supabase().auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true } });
     setBusy(false);
-    if (error) setError(error.message.includes('rate') ? 'Please wait a minute before asking for another code.' : 'Could not send the code. Check the email address.');
+    if (error) {
+      console.error('send code failed', error);
+      setError(error.message.includes('rate') ? 'Please wait a minute before asking for another code.' : `Could not send the code. (${error.message || 'no reply from the sign-in service'})`);
+    }
     else setStep('code');
   };
   const verify = async () => {
