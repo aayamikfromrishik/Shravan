@@ -2,7 +2,7 @@
 import { db, handle } from '@/lib/server';
 import { requireAdmin } from '@/lib/admin';
 import { pingClaude } from '@/lib/ai';
-import { checkR2 } from '@/lib/files';
+import { checkR2, r2Ready } from '@/lib/files';
 import { adminEmails } from '@/lib/config';
 
 export const maxDuration = 60;
@@ -36,6 +36,8 @@ export const GET = handle(async (req) => {
     run('Upload storage (Supabase)', async () => {
       const a = await sb.storage.getBucket('uploads');
       if (a.error) throw new Error('Bucket "uploads" missing: run schema.sql again.');
+      // Kept files go to Cloudflare R2 when it is connected; the "files" bucket is only a fallback.
+      if (r2Ready()) return 'bucket "uploads" exists; kept files go to Cloudflare R2';
       const b = await sb.storage.getBucket('files');
       if (b.error) throw new Error('Bucket "files" missing: run 002_keep_files.sql.');
       return 'buckets "uploads" and "files" exist';
