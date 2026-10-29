@@ -19,6 +19,19 @@ function r2() {
 }
 const r2Url = (key: string) => `https://${R2.account}.r2.cloudflarestorage.com/${R2.bucket}/${key.split('/').map(encodeURIComponent).join('/')}`;
 
+/**
+ * Upload to R2. aws4fetch signs the request; we send it ourselves with a fixed-size body so Node
+ * includes a Content-Length header (R2 rejects uploads sent in chunks without one).
+ */
+async function r2Put(key: string, bytes: Uint8Array, contentType: string): Promise<Response> {
+  const body = bytes.slice().buffer as ArrayBuffer;
+  const signed = await r2().sign(r2Url(key), { method: 'PUT', body, headers: { 'Content-Type': contentType } });
+  const headers = new Headers(signed.headers);
+  headers.set('Content-Length', String(body.byteLength));
+  // Plain URL + fixed-size body (not a Request object): Next.js' fetch would otherwise stream it in chunks.
+  return fetch(signed.url, { method: 'PUT', headers, body, cache: 'no-store' });
+}
+
 function typeFor(name: string): string {
   const n = name.toLowerCase();
   if (n.endsWith('.pdf')) return 'application/pdf';
@@ -42,7 +55,7 @@ export async function keepFile(args: { bookId: string; userId: string | null; fi
     const key = `books/${args.bookId}/${crypto.randomUUID()}-${safe(args.fileName)}`;
     let store: 'r2' | 'supabase';
     if (r2Ready()) {
-      const res = await r2().fetch(r2Url(key), { method: 'PUT', body: args.bytes.slice().buffer as ArrayBuffer, headers: { 'Content-Type': contentType } });
+      const res = await r2Put(key, args.bytes, contentType);
       if (!res.ok) throw new Error(`R2 upload failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
       store = 'r2';
     } else {
@@ -59,7 +72,7 @@ export async function keepFile(args: { bookId: string; userId: string | null; fi
 /** Save any object (e.g. narrated audio). Uses R2 when connected, otherwise private Supabase storage. */
 export async function putObject(key: string, bytes: Uint8Array, contentType: string): Promise<'r2' | 'supabase'> {
   if (r2Ready()) {
-    const res = await r2().fetch(r2Url(key), { method: 'PUT', body: bytes.slice().buffer as ArrayBuffer, headers: { 'Content-Type': contentType } });
+    const res = await r2Put(key, bytes, contentType);
     if (!res.ok) throw new Error(`R2 upload failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
     return 'r2';
   }
@@ -126,7 +139,7 @@ export const learnerDownloadsOn = () => process.env.LEARNER_DOWNLOADS === 'true'
 export async function checkR2(): Promise<string> {
   if (!r2Ready()) throw new Error('R2 keys are not set in Vercel (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY).');
   const key = `health/check-${Date.now()}.txt`;
-  const put = await r2().fetch(r2Url(key), { method: 'PUT', body: 'ok', headers: { 'Content-Type': 'text/plain' } });
+  const put = await r2Put(key, new TextEncoder().encode('ok'), 'text/plain');
   if (!put.ok) throw new Error(`Could not save a test file (${put.status}). ${(await put.text()).slice(0, 160)}`);
   const signed = await downloadUrl({ store: 'r2', key, file_name: 'check.txt' });
   const get = await fetch(signed);
