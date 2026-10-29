@@ -1,13 +1,14 @@
 // Server-side helpers: database access, who is calling, and access rules.
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import { adminEmails, LIMITS } from './config';
+import { SUPABASE_URL } from './supabase-public';
 
 let admin: SupabaseClient | null = null;
 export function db(): SupabaseClient {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('Supabase is not configured (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).');
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('Supabase is not configured (SUPABASE_SERVICE_ROLE_KEY is missing in Vercel).');
   }
-  admin ??= createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+  admin ??= createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY.trim(), {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   return admin;

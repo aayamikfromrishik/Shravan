@@ -1,10 +1,11 @@
 'use client';
 // Browser-side helpers: sign-in session and calls to the SHRAVAN server.
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from './supabase-public';
 
 let sb: SupabaseClient | null = null;
 export function supabase(): SupabaseClient {
-  sb ??= createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'missing', {
+  sb ??= createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
   });
   return sb;
