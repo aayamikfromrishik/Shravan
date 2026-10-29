@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { use, useCallback, useEffect, useState } from 'react';
-import { api, daysLeft, fmtDate } from '@/lib/client';
+import { api, daysLeft, downloadBookFile, fmtDate } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
 import { BottomNav, ErrorNote, Icon, Loading, TopBar } from '@/components/ui';
 
@@ -39,6 +39,7 @@ export default function BookPage({ params }: { params: Promise<{ id: string }> }
   const [d, setD] = useState<BookResp | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [hasFile, setHasFile] = useState(false);
 
   const load = useCallback(() => {
     api<BookResp>(`/api/books/${id}`)
@@ -46,6 +47,11 @@ export default function BookPage({ params }: { params: Promise<{ id: string }> }
       .catch((e) => setError(e.message));
   }, [id]);
   useEffect(load, [load]);
+  useEffect(() => {
+    api<{ files: unknown[] }>(`/api/books/${id}/files`)
+      .then((r) => setHasFile(r.files.length > 0))
+      .catch(() => setHasFile(false));
+  }, [id]);
 
   if (error) return <main className="page"><TopBar back="/" /><ErrorNote error={error} /><BottomNav /></main>;
   if (!d) return <main className="page"><TopBar back="/" /><Loading /><BottomNav /></main>;
@@ -234,6 +240,11 @@ export default function BookPage({ params }: { params: Promise<{ id: string }> }
             </Link>
           )}
         </div>
+      )}
+      {hasFile && (
+        <button className="linkbtn small" onClick={() => downloadBookFile(id).catch((e) => setError((e as Error).message))}>
+          Download the original file
+        </button>
       )}
       {me?.isAdmin && book.is_library && (
         <Link href="/admin" className="small">

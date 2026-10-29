@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { api, daysLeft, fmtDate, uploadBook } from '@/lib/client';
+import { api, daysLeft, downloadBookFile, fmtDate, uploadBook } from '@/lib/client';
 import { SUBJECTS } from '@/lib/config';
 import { useApp } from '@/components/AppProvider';
 import { ErrorNote, Loading } from '@/components/ui';
@@ -128,6 +128,11 @@ function LibraryTab() {
                         <button className="linkbtn" onClick={() => publish(b, !b.published)}>
                           {b.published ? 'Unpublish' : 'Publish'}
                         </button>
+                        {!b.needs_own_copy && (
+                          <button className="linkbtn" onClick={() => downloadBookFile(b.id).catch((e) => setError((e as Error).message))}>
+                            Download
+                          </button>
+                        )}
                         {!b.needs_own_copy && b.status === 'ready' && (
                           <button className="linkbtn" onClick={() => setFreeFor(b)}>
                             {free ? 'Free settings' : 'Make free'}
@@ -580,6 +585,9 @@ function StarterTab() {
           </button>
           <button className="btn small ghost" disabled={busy || !ready.length} onClick={() => importList(ready)}>
             Import everything else ({ready.length})
+          </button>
+          <button className="btn small ghost" disabled={busy} onClick={() => importList(books.filter((b) => b.imported && b.url))}>
+            Keep original files of imported books
           </button>
         </div>
         {own.map((o) => (

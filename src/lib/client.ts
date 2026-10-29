@@ -45,6 +45,14 @@ export async function uploadBook(file: File): Promise<{ path: string }> {
   return { path };
 }
 
+/** Download the kept original file of a book (PDF / EPUB / text). */
+export async function downloadBookFile(bookId: string): Promise<void> {
+  const { files } = await api<{ files: { id: string; fileName: string }[] }>(`/api/books/${bookId}/files`);
+  if (!files.length) throw new ApiError(404, 'No file is kept for this book yet.');
+  const { url } = await api<{ url: string }>(`/api/files/${files[0].id}`);
+  window.location.href = url;
+}
+
 export function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }

@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { extractAny, extractPlain } from './extract';
 import { ingestText } from './ingest';
 import { verifyLesson } from './ai';
+import { keepFile } from './files';
 import type { Lesson } from './lesson';
 
 export interface CatalogueBook {
@@ -51,7 +52,18 @@ export async function importBook(sb: SupabaseClient, slug: string, adminId: stri
   if (!b) return { ok: false, note: 'Not in the catalogue.' };
 
   const { data: have } = await sb.from('books').select('id').eq('slug', slug).maybeSingle();
-  if (have) return { ok: true, bookId: have.id, note: 'Already in the library.' };
+  if (have) {
+    // Added before files were kept: fetch the original once more and keep it.
+    const { data: kept } = await sb.from('book_files').select('id').eq('book_id', have.id).is('user_id', null).limit(1);
+    if (!kept?.length && b.url) {
+      const res = await fetch(b.url);
+      if (res.ok) {
+        await keepFile({ bookId: have.id, userId: null, fileName: decodeURIComponent(new URL(b.url).pathname.split('/').pop() || `${slug}.txt`), bytes: new Uint8Array(await res.arrayBuffer()) });
+        return { ok: true, bookId: have.id, note: 'Already in the library; original file now kept.' };
+      }
+    }
+    return { ok: true, bookId: have.id, note: 'Already in the library.' };
+  }
 
   if (b.needsOwnCopy) {
     const { data, error } = await sb
@@ -84,6 +96,7 @@ export async function importBook(sb: SupabaseClient, slug: string, adminId: stri
     skipUntil: b.skipUntil || null,
     createdBy: adminId,
   });
+  await keepFile({ bookId: r.bookId, userId: null, fileName: decodeURIComponent(new URL(b.url).pathname.split('/').pop() || `${slug}.txt`), bytes: buf });
   if (r.existing) {
     await sb.from('books').update({ slug, is_library: true, published: true, subject: b.subject, rights: 'public_domain' }).eq('id', r.bookId);
   }

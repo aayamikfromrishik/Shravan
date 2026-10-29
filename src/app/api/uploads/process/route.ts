@@ -1,8 +1,9 @@
 // After upload: read the text, find chapters, link to an existing copy of the same edition if there is one,
-// then delete the original file (only the text is kept, privately).
+// keep a private copy of the original file, then clear the temporary upload.
 import { body, db, getCaller, handle, HttpError } from '@/lib/server';
 import { extractAny } from '@/lib/extract';
 import { ingestText } from '@/lib/ingest';
+import { keepFile } from '@/lib/files';
 
 export const maxDuration = 300;
 
@@ -31,6 +32,7 @@ export const POST = handle(async (req) => {
       title: meta.title || ex.title || b.fileName.replace(/\.(pdf|epub|txt)$/i, '').replace(/[_-]+/g, ' '),
       createdBy: c.user.id,
     });
+    await keepFile({ bookId: r.bookId, userId: c.user.id, fileName: b.fileName, bytes });
     await sb
       .from('user_books')
       .upsert(

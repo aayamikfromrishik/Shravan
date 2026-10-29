@@ -98,6 +98,7 @@ export interface BookRow {
   published: boolean;
   needs_own_copy: boolean;
   buy_url: string | null;
+  rights: string | null;
   status: string;
   status_note: string | null;
   free_until: string | null;

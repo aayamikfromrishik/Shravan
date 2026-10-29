@@ -1,6 +1,7 @@
 // Admin: publish / unpublish / edit a library book, or remove it.
 import { body, db, handle, HttpError } from '@/lib/server';
 import { requireAdmin } from '@/lib/admin';
+import { removeBookFiles } from '@/lib/files';
 
 export const PATCH = handle(async (req, ctx) => {
   const { id } = await ctx.params;
@@ -24,6 +25,9 @@ export const DELETE = handle(async (req, ctx) => {
   // Library flag off; learners who uploaded the same edition keep their copy.
   const { count } = await db().from('user_books').select('*', { count: 'exact', head: true }).eq('book_id', id);
   if (count) await db().from('books').update({ is_library: false, published: false }).eq('id', id);
-  else await db().from('books').delete().eq('id', id);
+  else {
+    await removeBookFiles(id);
+    await db().from('books').delete().eq('id', id);
+  }
   return Response.json({ ok: true });
 });

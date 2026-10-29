@@ -238,3 +238,21 @@ alter table usage_log enable row level security;
 insert into storage.buckets (id, name, public, file_size_limit)
 values ('uploads', 'uploads', false, 31457280)
 on conflict (id) do nothing;
+
+-- ---------- Update 2: kept book files (also in supabase/migrations/002_keep_files.sql) ----------
+create table if not exists book_files (
+  id uuid primary key default gen_random_uuid(),
+  book_id uuid not null references books(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
+  store text not null check (store in ('r2','supabase')),
+  key text not null,
+  file_name text not null,
+  content_type text,
+  size_bytes bigint,
+  created_at timestamptz not null default now()
+);
+create index if not exists book_files_book_idx on book_files(book_id);
+alter table book_files enable row level security;
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('files', 'files', false, 52428800)
+on conflict (id) do nothing;
