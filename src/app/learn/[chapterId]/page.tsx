@@ -450,7 +450,7 @@ function ListenView({ d, showText, setShowText, sentences, savePos, onNext }: { 
       <button className="btn accent" onClick={onNext}>
         Next: Reflect
       </button>
-      <Player sentences={sentences} lang={d.settings.lang} start={d.progress?.speech_position || 0} onPosition={savePos} />
+      <Player sentences={sentences} lang={d.settings.lang} start={d.progress?.speech_position || 0} onPosition={savePos} versionId={d.versionId} />
     </>
   );
 }

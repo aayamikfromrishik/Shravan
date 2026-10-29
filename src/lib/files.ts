@@ -56,6 +56,42 @@ export async function keepFile(args: { bookId: string; userId: string | null; fi
   }
 }
 
+/** Save any object (e.g. narrated audio). Uses R2 when connected, otherwise private Supabase storage. */
+export async function putObject(key: string, bytes: Uint8Array, contentType: string): Promise<'r2' | 'supabase'> {
+  if (r2Ready()) {
+    const res = await r2().fetch(r2Url(key), { method: 'PUT', body: bytes.slice().buffer as ArrayBuffer, headers: { 'Content-Type': contentType } });
+    if (!res.ok) throw new Error(`R2 upload failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
+    return 'r2';
+  }
+  const { error } = await db().storage.from('files').upload(key, bytes, { contentType, upsert: true });
+  if (error) throw new Error('Supabase save failed: ' + error.message);
+  return 'supabase';
+}
+
+/** A short-lived link to play/stream an object in the browser. */
+export async function objectUrl(store: string, key: string, seconds = 6 * 3600): Promise<string> {
+  if (store === 'r2') {
+    const u = new URL(r2Url(key));
+    u.searchParams.set('X-Amz-Expires', String(seconds));
+    return (await r2().sign(new Request(u.toString()), { aws: { signQuery: true } })).url;
+  }
+  const { data, error } = await db().storage.from('files').createSignedUrl(key, seconds);
+  if (error || !data) throw new Error('Could not make a link.');
+  return data.signedUrl;
+}
+
+/** Delete objects (best effort). */
+export async function removeObjects(items: { store: string; key: string }[]) {
+  for (const f of items) {
+    try {
+      if (f.store === 'r2') await r2().fetch(r2Url(f.key), { method: 'DELETE' });
+      else await db().storage.from('files').remove([f.key]);
+    } catch (e) {
+      console.error('removeObjects', e);
+    }
+  }
+}
+
 /** A short-lived link that downloads the file with its original name. */
 export async function downloadUrl(f: { store: string; key: string; file_name: string }): Promise<string> {
   if (f.store === 'r2') {

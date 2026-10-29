@@ -1,5 +1,6 @@
 import { body, db, getCaller, handle, isSubscriber } from '@/lib/server';
 import { LIMITS, PAYMENTS_ENABLED } from '@/lib/config';
+import { getVoiceSettings, sarvamReady } from '@/lib/voice';
 
 export const GET = handle(async (req) => {
   const c = await getCaller(req);
@@ -16,6 +17,7 @@ export const GET = handle(async (req) => {
     previewsLeft: Math.max(0, LIMITS.freePreviewBooks - (used || 0)),
     unread: unread || 0,
     paymentsEnabled: PAYMENTS_ENABLED,
+    aiVoice: sarvamReady() && (await getVoiceSettings().catch(() => ({ enabled: false }))).enabled,
   });
 });
 

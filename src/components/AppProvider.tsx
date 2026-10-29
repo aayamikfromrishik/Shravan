@@ -21,6 +21,7 @@ export interface Me {
   previewsLeft: number;
   unread: number;
   paymentsEnabled: boolean;
+  aiVoice?: boolean;
 }
 
 interface Ctx {

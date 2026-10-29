@@ -3,6 +3,7 @@ import { db, handle } from '@/lib/server';
 import { requireAdmin } from '@/lib/admin';
 import { pingClaude } from '@/lib/ai';
 import { checkR2, r2Ready } from '@/lib/files';
+import { sarvamReady, sarvamSpeak, getVoiceSettings } from '@/lib/voice';
 import { adminEmails } from '@/lib/config';
 
 export const maxDuration = 60;
@@ -45,6 +46,17 @@ export const GET = handle(async (req) => {
     }),
     run('Cloudflare R2', checkR2),
     run('Claude API', async () => `key works, credit available (${await pingClaude()})`),
+    run('Narrator voice (Sarvam)', async () => {
+      if (!sarvamReady()) throw new Error('SARVAM_API_KEY is not set in Vercel.');
+      const s = await getVoiceSettings();
+      const mp3 = await sarvamSpeak('Namaste.', s.voices.english, 'en-IN');
+      return `key works (${Math.round(mp3.byteLength / 1024)} KB test clip); narrator ${s.enabled ? 'ON' : 'off'}`;
+    }),
+    run('Voice database (update 3)', async () => {
+      const { error } = await sb.from('lesson_audio').select('id').limit(1);
+      if (error) throw new Error('Not found. Run supabase/migrations/003_voice.sql in Supabase → SQL Editor.');
+      return 'ready';
+    }),
     run('Admin email', async () => {
       const list = adminEmails();
       if (!list.length) throw new Error('ADMIN_EMAILS is empty in Vercel.');

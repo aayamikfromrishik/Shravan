@@ -20,7 +20,7 @@ interface AB {
   word_count: number | null;
   rights: string | null;
 }
-type Tab = 'library' | 'starter' | 'add' | 'flags' | 'learners' | 'usage' | 'health';
+type Tab = 'library' | 'starter' | 'add' | 'flags' | 'learners' | 'usage' | 'voice' | 'health';
 
 export default function Admin() {
   const { me } = useApp();
@@ -40,6 +40,7 @@ export default function Admin() {
     ['flags', 'Flagged lessons'],
     ['learners', 'Learners'],
     ['usage', 'Usage & costs'],
+    ['voice', 'Narrator voice'],
     ['health', 'System check'],
   ];
   return (
@@ -66,6 +67,7 @@ export default function Admin() {
       {tab === 'flags' && <FlagsTab />}
       {tab === 'learners' && <LearnersTab />}
       {tab === 'usage' && <UsageTab />}
+      {tab === 'voice' && <VoiceTab />}
       {tab === 'health' && <HealthTab />}
     </main>
   );
@@ -674,6 +676,149 @@ function HealthTab() {
       <button className="btn small ghost" onClick={run} style={{ alignSelf: 'flex-start' }}>
         Check again
       </button>
+    </section>
+  );
+}
+
+type VoiceKey = 'english' | 'hindi' | 'mix' | 'spiritual_english' | 'spiritual_hindi';
+interface VoiceSettingsUI {
+  enabled: boolean;
+  budgetInr: number;
+  pace: number;
+  voices: Record<VoiceKey, string>;
+}
+const VOICE_LABELS: [VoiceKey, string, string][] = [
+  ['english', 'English lessons', 'en-IN'],
+  ['hindi', 'Hindi lessons', 'hi-IN'],
+  ['mix', 'Mix (Hinglish) lessons', 'hi-IN'],
+  ['spiritual_english', 'Spiritual books, English', 'en-IN'],
+  ['spiritual_hindi', 'Spiritual books, Hindi', 'hi-IN'],
+];
+const SAMPLE_LINES: Record<string, string> = {
+  'en-IN': 'Every morning, your purse is filled with twenty-four hours. No one can take them from you, and no one receives more or less than you do.',
+  'hi-IN': 'हर सुबह आपको चौबीस घंटे मिलते हैं। कोई इन्हें आपसे छीन नहीं सकता, और किसी को आपसे कम या ज़्यादा समय नहीं मिलता।',
+  mix: 'हर सुबह आपको twenty-four hours मिलते हैं, और यही आपकी सबसे बड़ी daily wealth है।',
+  'bn-IN': 'প্রতিদিন সকালে আপনি চব্বিশ ঘণ্টা পান। কেউ তা আপনার কাছ থেকে নিতে পারে না।',
+};
+
+function VoiceTab() {
+  const [d, setD] = useState<{ settings: VoiceSettingsUI; suggestions: string[]; keySet: boolean; spentThisMonthInr: number; inrPer10kChars: number } | null>(null);
+  const [form, setForm] = useState<VoiceSettingsUI | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [test, setTest] = useState({ text: SAMPLE_LINES['en-IN'], speaker: 'shubh_en_narration_gentle', lang: 'en-IN' });
+  const [testing, setTesting] = useState(false);
+  const load = useCallback(() => {
+    api<{ settings: VoiceSettingsUI; suggestions: string[]; keySet: boolean; spentThisMonthInr: number; inrPer10kChars: number }>('/api/admin/voice')
+      .then((r) => {
+        setD(r);
+        setForm(r.settings);
+      })
+      .catch((e) => setError(e.message));
+  }, []);
+  useEffect(load, [load]);
+
+  const save = async () => {
+    if (!form) return;
+    setError(null);
+    setSaved(false);
+    try {
+      await api('/api/admin/voice', { method: 'PUT', body: form });
+      setSaved(true);
+      load();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+  const listen = async () => {
+    setTesting(true);
+    setError(null);
+    try {
+      const r = await api<{ audio: string }>('/api/admin/voice/test', { body: { text: test.text, speaker: test.speaker, lang: test.lang === 'mix' ? 'hi-IN' : test.lang, pace: form?.pace } });
+      await new Audio('data:audio/mpeg;base64,' + r.audio).play();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setTesting(false);
+  };
+
+  if (!d || !form) return error ? <ErrorNote error={error} /> : <Loading />;
+  return (
+    <section className="col">
+      <ErrorNote error={error} />
+      {!d.keySet && <div className="note warn">Add SARVAM_API_KEY in Vercel (Settings → Environments → Production) and redeploy. Until then lessons use the phone voice.</div>}
+      <datalist id="voice-names">
+        {d.suggestions.map((v) => (
+          <option key={v} value={v} />
+        ))}
+      </datalist>
+
+      <div className="card col">
+        <h3 style={{ margin: 0 }}>Settings</h3>
+        <label className="row" style={{ gap: 8 }}>
+          <input type="checkbox" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
+          <span>Use the narrator voice in lessons (otherwise the phone voice)</span>
+        </label>
+        <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <label className="col" style={{ gap: 4 }}>
+            <span className="small muted">Monthly budget (₹, 0 = no limit)</span>
+            <input type="number" min={0} step={50} value={form.budgetInr} onChange={(e) => setForm({ ...form, budgetInr: Number(e.target.value) })} style={{ width: 140 }} />
+          </label>
+          <label className="col" style={{ gap: 4 }}>
+            <span className="small muted">Speaking speed (1 = normal)</span>
+            <input type="number" min={0.5} max={2} step={0.05} value={form.pace} onChange={(e) => setForm({ ...form, pace: Number(e.target.value) })} style={{ width: 120 }} />
+          </label>
+        </div>
+        <p className="tiny muted" style={{ margin: 0 }}>
+          Spent this month: ₹{d.spentThisMonthInr}
+          {form.budgetInr ? ` of ₹${form.budgetInr}` : ''} · about ₹{d.inrPer10kChars} per 10,000 characters. When the budget is used up, lessons use the phone voice until next month.
+        </p>
+        {VOICE_LABELS.map(([k, label]) => (
+          <label key={k} className="col" style={{ gap: 4 }}>
+            <span className="small muted">{label}</span>
+            <input list="voice-names" value={form.voices[k]} onChange={(e) => setForm({ ...form, voices: { ...form.voices, [k]: e.target.value.trim() } })} />
+          </label>
+        ))}
+        <p className="tiny muted" style={{ margin: 0 }}>Changing a voice makes new narration the next time each lesson is played; audio already made with the old voice stays saved.</p>
+        <div className="row" style={{ gap: 8 }}>
+          <button className="btn small" onClick={save}>
+            Save
+          </button>
+          {saved && <span className="small">Saved ✓</span>}
+        </div>
+      </div>
+
+      <div className="card col">
+        <h3 style={{ margin: 0 }}>Voice tester</h3>
+        <p className="tiny muted" style={{ margin: 0 }}>Hear any voice before choosing it. Each try costs a fraction of a rupee.</p>
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+          {[
+            ['en-IN', 'English'],
+            ['hi-IN', 'Hindi'],
+            ['mix', 'Mix'],
+            ['bn-IN', 'Bengali'],
+          ].map(([l, name]) => (
+            <button key={l} className={`btn small ${test.lang === l ? '' : 'ghost'}`} onClick={() => setTest({ ...test, lang: l, text: SAMPLE_LINES[l] })}>
+              {name}
+            </button>
+          ))}
+        </div>
+        <textarea rows={3} value={test.text} onChange={(e) => setTest({ ...test, text: e.target.value })} />
+        <label className="col" style={{ gap: 4 }}>
+          <span className="small muted">Voice</span>
+          <input list="voice-names" value={test.speaker} onChange={(e) => setTest({ ...test, speaker: e.target.value.trim() })} />
+        </label>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn small" onClick={listen} disabled={testing || !d.keySet}>
+            {testing ? 'Making…' : '▶ Listen'}
+          </button>
+          {VOICE_LABELS.map(([k, label]) => (
+            <button key={k} className="linkbtn small" onClick={() => setForm({ ...form, voices: { ...form.voices, [k]: test.speaker } })}>
+              Use for {label.toLowerCase()}
+            </button>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
