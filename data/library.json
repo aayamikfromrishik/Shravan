@@ -30,7 +30,7 @@
    "title": "Pushing to the Front",
    "author": "Orison Swett Marden",
    "subject": "habits",
-   "note": "Find a plain-text link and add it."
+   "url": "https://www.gutenberg.org/cache/epub/21291/pg21291.txt"
   },
   {
    "slug": "thoreau-walden",
@@ -58,10 +58,11 @@
   },
   {
    "slug": "seneca-shortness-of-life",
-   "title": "On the Shortness of Life",
+   "title": "Minor Dialogues (with On the Shortness of Life)",
    "author": "Seneca",
    "subject": "mind",
-   "note": "Use a translation published before 1931 (e.g. Aubrey Stewart, 1900)."
+   "url": "https://www.gutenberg.org/cache/epub/64576/pg64576.txt",
+   "edition": "Translated by Aubrey Stewart (1900)"
   },
   {
    "slug": "allen-as-a-man-thinketh",
@@ -85,7 +86,7 @@
    "title": "The Science of Getting Rich",
    "author": "Wallace D. Wattles",
    "subject": "work",
-   "note": "Find a plain-text link and add it."
+   "url": "https://www.gutenberg.org/cache/epub/59844/pg59844.txt"
   },
   {
    "slug": "conwell-acres-of-diamonds",
@@ -99,7 +100,7 @@
    "title": "The Way to Wealth",
    "author": "Benjamin Franklin",
    "subject": "work",
-   "note": "Find a plain-text link and add it."
+   "url": "https://www.gutenberg.org/cache/epub/43855/pg43855.txt"
   },
   {
    "slug": "barnum-money-getting",
@@ -153,7 +154,7 @@
    "title": "Letters to His Son",
    "author": "Lord Chesterfield",
    "subject": "communication",
-   "note": "Find a plain-text link and add it."
+   "url": "https://www.gutenberg.org/cache/epub/3361/pg3361.txt"
   },
   {
    "slug": "win-without-pitching",
@@ -216,21 +217,42 @@
    "title": "Ramcharitmanas",
    "author": "Tulsidas, translated by F. S. Growse",
    "subject": "spiritual",
-   "note": "Find a plain-text link and add it."
+   "note": "Only scanned copies of Growse found so far; needs a text source."
   },
   {
-   "slug": "mahabharata-ganguli",
-   "title": "Mahabharata",
+   "slug": "mahabharata-ganguli-1",
+   "title": "Mahabharata, Volume 1",
    "author": "Translated by Kisari Mohan Ganguli",
    "subject": "spiritual",
-   "note": "Published in many volumes; add each parva as its own link."
+   "url": "https://www.gutenberg.org/cache/epub/15474/pg15474.txt"
+  },
+  {
+   "slug": "mahabharata-ganguli-2",
+   "title": "Mahabharata, Volume 2",
+   "author": "Translated by Kisari Mohan Ganguli",
+   "subject": "spiritual",
+   "url": "https://www.gutenberg.org/cache/epub/15475/pg15475.txt"
+  },
+  {
+   "slug": "mahabharata-ganguli-3",
+   "title": "Mahabharata, Volume 3",
+   "author": "Translated by Kisari Mohan Ganguli",
+   "subject": "spiritual",
+   "url": "https://www.gutenberg.org/cache/epub/15476/pg15476.txt"
+  },
+  {
+   "slug": "mahabharata-ganguli-4",
+   "title": "Mahabharata, Volume 4",
+   "author": "Translated by Kisari Mohan Ganguli",
+   "subject": "spiritual",
+   "url": "https://www.gutenberg.org/cache/epub/15477/pg15477.txt"
   },
   {
    "slug": "quran-pickthall",
    "title": "The Quran",
    "author": "Translated by M. Pickthall",
    "subject": "spiritual",
-   "note": "Find a plain-text link and add it."
+   "note": "No clean public copy of Pickthall found yet. Choose: wait for one, or use an older translation (Rodwell 1861 or Palmer 1880)."
   },
   {
    "slug": "bible-kjv",
@@ -247,10 +269,11 @@
   },
   {
    "slug": "zend-avesta",
-   "title": "Zend-Avesta",
+   "title": "Zend-Avesta, Part 1: The Vendidad",
    "author": "Translated by J. Darmesteter & L. H. Mills",
    "subject": "spiritual",
-   "note": "Find a plain-text link and add it."
+   "note": "Scanned text (OCR); check the chapters after import.",
+   "url": "https://archive.org/download/zendavesta01darm/zendavesta01darm_djvu.txt"
   },
   {
    "slug": "upanishads",
@@ -268,10 +291,11 @@
   },
   {
    "slug": "jain-sutras",
-   "title": "Jaina Sutras",
+   "title": "Jaina Sutras, Part 1",
    "author": "Translated by Hermann Jacobi",
    "subject": "spiritual",
-   "note": "Find a plain-text link and add it."
+   "note": "Scanned text (OCR); check the chapters after import.",
+   "url": "https://archive.org/download/gainastras01aco/gainastras01aco_djvu.txt"
   },
   {
    "slug": "tao-te-ching-legge",
@@ -297,7 +321,7 @@
    "title": "Karma Yoga",
    "author": "Swami Vivekananda",
    "subject": "spiritual",
-   "note": "Find a plain-text link and add it."
+   "url": "https://archive.org/download/KarmaYogaswamiVivekanandaBook/KarmaYoga.pdf"
   },
   {
    "slug": "tagore-sadhana",
