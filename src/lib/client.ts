@@ -6,7 +6,7 @@ import { SUPABASE_PUBLIC_KEY, SUPABASE_URL } from './supabase-public';
 let sb: SupabaseClient | null = null;
 export function supabase(): SupabaseClient {
   sb ??= createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' },
   });
   return sb;
 }

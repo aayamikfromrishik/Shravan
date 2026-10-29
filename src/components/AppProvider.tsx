@@ -71,7 +71,11 @@ export default function AppProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!ready) return;
-    if (!session && !PUBLIC.includes(path)) router.replace('/signin');
+    if (!session && !PUBLIC.includes(path)) {
+      // Keep any message from a failed sign-in link so the sign-in page can show it.
+      const extra = /error/.test(window.location.search + window.location.hash) ? window.location.search + window.location.hash : '';
+      router.replace('/signin' + extra);
+    }
     if (session) refresh();
   }, [ready, session, path, router, refresh]);
 

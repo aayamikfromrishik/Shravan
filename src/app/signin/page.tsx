@@ -18,6 +18,20 @@ export default function SignIn() {
     if (session) router.replace('/');
   }, [session, router]);
 
+  // A sign-in link that failed comes back with the reason in the address.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search + '&' + window.location.hash.replace(/^#/, ''));
+    const code = p.get('error_code');
+    const desc = p.get('error_description');
+    if (code || desc) {
+      setError(
+        code === 'otp_expired'
+          ? 'That sign-in link has expired or was already used. Please ask for a new one.'
+          : `The sign-in link did not work (${desc || code}). Please ask for a new one.`,
+      );
+    }
+  }, []);
+
   const google = async () => {
     setError(null);
     const { error } = await supabase().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/' } });
@@ -26,7 +40,7 @@ export default function SignIn() {
   const sendCode = async () => {
     setBusy(true);
     setError(null);
-    const { error } = await supabase().auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true } });
+    const { error } = await supabase().auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true, emailRedirectTo: window.location.origin + '/' } });
     setBusy(false);
     if (error) {
       console.error('send code failed', error);
@@ -73,7 +87,7 @@ export default function SignIn() {
               Continue with email
             </button>
             <p className="center muted small" style={{ margin: 0 }}>
-              We send a 6-digit code. No password to remember.
+              We email you a sign-in link or code. No password to remember.
             </p>
           </>
         )}
@@ -106,17 +120,17 @@ export default function SignIn() {
             }}
           >
             <p className="small" style={{ margin: 0 }}>
-              We sent a 6-digit code to <b>{email}</b>.
+              We emailed <b>{email}</b>. Open the email on this device and tap the link, or type the code if the email shows one.
             </p>
             <label className="col" style={{ gap: 6 }}>
               <span className="small muted">Code</span>
-              <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} style={{ fontSize: 24, letterSpacing: '0.4em', textAlign: 'center' }} />
+              <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} style={{ fontSize: 24, letterSpacing: '0.4em', textAlign: 'center' }} />
             </label>
-            <button className="btn" disabled={busy || code.length !== 6}>
+            <button className="btn" disabled={busy || code.length < 6}>
               {busy ? 'Checking…' : 'Sign in'}
             </button>
             <button type="button" className="linkbtn" onClick={sendCode}>
-              Send a new code
+              Send a new email
             </button>
           </form>
         )}
