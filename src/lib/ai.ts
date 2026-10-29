@@ -355,3 +355,9 @@ Do not invent new claims about the book. ${langRule(args.lang)}`;
   const { data, usage } = await callJson<BookPlan>({ system: RULES, prompt, schema, maxTokens: 1500, effort: 'low' });
   return { plan: data, usage };
 }
+
+/** System check: a tiny call that proves the key works and the account has credit. */
+export async function pingClaude(): Promise<string> {
+  const res = await anthropic().messages.create({ model: MODEL, max_tokens: 5, messages: [{ role: 'user', content: 'Reply with OK.' }] });
+  return res.model;
+}

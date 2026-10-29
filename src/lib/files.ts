@@ -85,3 +85,16 @@ export async function removeBookFiles(bookId: string) {
 
 /** Learners may download only when switched on: their own uploads, and public-domain library books. */
 export const learnerDownloadsOn = () => process.env.LEARNER_DOWNLOADS === 'true';
+
+/** System check: write, read back and delete a tiny test file in Cloudflare R2. */
+export async function checkR2(): Promise<string> {
+  if (!r2Ready()) throw new Error('R2 keys are not set in Vercel (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY).');
+  const key = `health/check-${Date.now()}.txt`;
+  const put = await r2().fetch(r2Url(key), { method: 'PUT', body: 'ok', headers: { 'Content-Type': 'text/plain' } });
+  if (!put.ok) throw new Error(`Could not save a test file (${put.status}). ${(await put.text()).slice(0, 160)}`);
+  const signed = await downloadUrl({ store: 'r2', key, file_name: 'check.txt' });
+  const get = await fetch(signed);
+  if (!get.ok) throw new Error(`Saved, but could not read it back (${get.status}).`);
+  await r2().fetch(r2Url(key), { method: 'DELETE' });
+  return `bucket "${R2.bucket}" works (save, download link, delete)`;
+}

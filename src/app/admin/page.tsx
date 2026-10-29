@@ -20,7 +20,7 @@ interface AB {
   word_count: number | null;
   rights: string | null;
 }
-type Tab = 'library' | 'starter' | 'add' | 'flags' | 'learners' | 'usage';
+type Tab = 'library' | 'starter' | 'add' | 'flags' | 'learners' | 'usage' | 'health';
 
 export default function Admin() {
   const { me } = useApp();
@@ -40,6 +40,7 @@ export default function Admin() {
     ['flags', 'Flagged lessons'],
     ['learners', 'Learners'],
     ['usage', 'Usage & costs'],
+    ['health', 'System check'],
   ];
   return (
     <main className="page wide nonav">
@@ -65,6 +66,7 @@ export default function Admin() {
       {tab === 'flags' && <FlagsTab />}
       {tab === 'learners' && <LearnersTab />}
       {tab === 'usage' && <UsageTab />}
+      {tab === 'health' && <HealthTab />}
     </main>
   );
 }
@@ -635,6 +637,43 @@ function StarterTab() {
           </tbody>
         </table>
       </div>
+    </section>
+  );
+}
+
+function HealthTab() {
+  const [checks, setChecks] = useState<{ name: string; ok: boolean | null; note: string }[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const run = useCallback(() => {
+    setChecks(null);
+    setError(null);
+    api<{ checks: { name: string; ok: boolean | null; note: string }[] }>('/api/admin/health')
+      .then((r) => setChecks(r.checks))
+      .catch((e) => setError(e.message));
+  }, []);
+  useEffect(run, [run]);
+  return (
+    <section className="col">
+      <ErrorNote error={error} />
+      {!checks && !error && <Loading />}
+      {checks && (
+        <div className="tablewrap card" style={{ padding: 0 }}>
+          <table className="admin">
+            <tbody>
+              {checks.map((c) => (
+                <tr key={c.name}>
+                  <td style={{ width: 28, fontSize: 18 }}>{c.ok === true ? '✓' : c.ok === false ? '✗' : '•'}</td>
+                  <td style={{ fontWeight: 600 }}>{c.name}</td>
+                  <td className="small">{c.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <button className="btn small ghost" onClick={run} style={{ alignSelf: 'flex-start' }}>
+        Check again
+      </button>
     </section>
   );
 }
