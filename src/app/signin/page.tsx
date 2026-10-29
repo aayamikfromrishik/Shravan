@@ -8,9 +8,10 @@ import { useApp } from '@/components/AppProvider';
 export default function SignIn() {
   const { session } = useApp();
   const router = useRouter();
-  const [step, setStep] = useState<'choose' | 'email' | 'code'>('choose');
+  const [step, setStep] = useState<'choose' | 'email' | 'code' | 'password'>('choose');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +48,15 @@ export default function SignIn() {
       setError(error.message.includes('rate') ? 'Please wait a minute before asking for another code.' : `Could not send the code. (${error.message || 'no reply from the sign-in service'})`);
     }
     else setStep('code');
+  };
+  // Password sign-in: for accounts created in Supabase (used for testing).
+  const signInWithPassword = async () => {
+    setBusy(true);
+    setError(null);
+    const { error } = await supabase().auth.signInWithPassword({ email: email.trim(), password });
+    setBusy(false);
+    if (error) setError(`Could not sign in. (${error.message})`);
+    else router.replace('/');
   };
   const verify = async () => {
     setBusy(true);
@@ -89,7 +99,34 @@ export default function SignIn() {
             <p className="center muted small" style={{ margin: 0 }}>
               We email you a sign-in link or code. No password to remember.
             </p>
+            <button type="button" className="linkbtn" onClick={() => setStep('password')}>
+              Sign in with password
+            </button>
           </>
+        )}
+        {step === 'password' && (
+          <form
+            className="col"
+            onSubmit={(e) => {
+              e.preventDefault();
+              signInWithPassword();
+            }}
+          >
+            <label className="col" style={{ gap: 6 }}>
+              <span className="small muted">Your email</span>
+              <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+            </label>
+            <label className="col" style={{ gap: 6 }}>
+              <span className="small muted">Password</span>
+              <input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </label>
+            <button className="btn" disabled={busy || !email.includes('@') || !password}>
+              {busy ? 'Signing in…' : 'Sign in'}
+            </button>
+            <button type="button" className="linkbtn" onClick={() => setStep('choose')}>
+              Back
+            </button>
+          </form>
         )}
         {step === 'email' && (
           <form
