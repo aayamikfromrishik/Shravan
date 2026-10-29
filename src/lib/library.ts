@@ -45,6 +45,18 @@ async function loadSamples(): Promise<SampleFile[]> {
   return Promise.all(files.map(async (f) => JSON.parse(await readFile(path.join(dir, f), 'utf8')) as SampleFile));
 }
 
+/** Get a catalogue file: a web link, or a cleaned text bundled with the app ("data/texts/…"). */
+async function fetchSource(url: string): Promise<{ ok: boolean; status: number; bytes: Uint8Array }> {
+  if (url.startsWith('data/')) {
+    const bytes = new Uint8Array(await readFile(path.join(process.cwd(), url)));
+    return { ok: true, status: 200, bytes };
+  }
+  const res = await fetch(url);
+  return { ok: res.ok, status: res.status, bytes: res.ok ? new Uint8Array(await res.arrayBuffer()) : new Uint8Array() };
+}
+
+const fileNameOf = (url: string, slug: string) => decodeURIComponent(url.split('?')[0].split('/').pop() || `${slug}.txt`);
+
 /** Download one catalogue book, split it into chapters and publish it. */
 export async function importBook(sb: SupabaseClient, slug: string, adminId: string) {
   const { books } = await loadCatalogue();
@@ -58,9 +70,9 @@ export async function importBook(sb: SupabaseClient, slug: string, adminId: stri
     // Added before files were kept: fetch the original once more and keep it.
     const { data: kept } = await sb.from('book_files').select('id').eq('book_id', have.id).is('user_id', null).limit(1);
     if (!kept?.length && b.url) {
-      const res = await fetch(b.url);
+      const res = await fetchSource(b.url);
       if (res.ok) {
-        await keepFile({ bookId: have.id, userId: null, fileName: decodeURIComponent(new URL(b.url).pathname.split('/').pop() || `${slug}.txt`), bytes: new Uint8Array(await res.arrayBuffer()) });
+        await keepFile({ bookId: have.id, userId: null, fileName: fileNameOf(b.url, slug), bytes: res.bytes });
         return { ok: true, bookId: have.id, note: 'Already in the library; original file now kept.' };
       }
     }
@@ -78,11 +90,11 @@ export async function importBook(sb: SupabaseClient, slug: string, adminId: stri
   }
 
   if (!b.url) return { ok: false, note: b.note || 'No link yet. Add it from Admin → Add.' };
-  const res = await fetch(b.url);
+  const res = await fetchSource(b.url);
   if (!res.ok) return { ok: false, note: `Could not download (${res.status}). Check the link.` };
-  const buf = new Uint8Array(await res.arrayBuffer());
+  const buf = res.bytes;
   const lower = b.url.toLowerCase();
-  const ex = lower.endsWith('.pdf') || lower.endsWith('.epub') ? await extractAny(buf, lower.endsWith('.pdf') ? 'b.pdf' : 'b.epub') : extractPlain(new TextDecoder().decode(buf));
+  const ex = lower.endsWith('.pdf') || lower.endsWith('.epub') ? await extractAny(buf, lower.endsWith('.pdf') ? 'b.pdf' : 'b.epub', { noLimits: true }) : extractPlain(new TextDecoder().decode(buf));
   if (!ex.ok) return { ok: false, note: ex.note || ex.status };
 
   const r = await ingestText(sb, ex, {
@@ -98,7 +110,7 @@ export async function importBook(sb: SupabaseClient, slug: string, adminId: stri
     skipUntil: b.skipUntil || null,
     createdBy: adminId,
   });
-  await keepFile({ bookId: r.bookId, userId: null, fileName: decodeURIComponent(new URL(b.url).pathname.split('/').pop() || `${slug}.txt`), bytes: buf });
+  await keepFile({ bookId: r.bookId, userId: null, fileName: fileNameOf(b.url, slug), bytes: buf });
   if (r.existing) {
     await sb.from('books').update({ slug, is_library: true, published: true, subject: b.subject, rights: 'public_domain' }).eq('id', r.bookId);
   }

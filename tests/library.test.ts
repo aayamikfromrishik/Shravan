@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { SUBJECTS } from '../src/lib/config';
 
 describe('starter library', () => {
@@ -8,6 +8,9 @@ describe('starter library', () => {
     const slugs = cat.books.map((b: { slug: string }) => b.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
     for (const b of cat.books) expect(SUBJECTS.map((s) => s.id)).toContain(b.subject);
+  });
+  it('bundled texts exist', () => {
+    for (const b of cat.books) if (b.url?.startsWith('data/')) expect(existsSync(b.url)).toBe(true);
   });
   it('every sample file has three complete lessons', () => {
     for (const f of readdirSync('data/samples')) {

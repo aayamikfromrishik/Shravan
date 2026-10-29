@@ -58,7 +58,7 @@ function ensureDrawingClasses() {
   if (!g.Path2D) g.Path2D = class { addPath() {} moveTo() {} lineTo() {} bezierCurveTo() {} quadraticCurveTo() {} closePath() {} rect() {} };
 }
 
-export async function extractPdf(data: Uint8Array): Promise<Extracted> {
+export async function extractPdf(data: Uint8Array, noLimits = false): Promise<Extracted> {
   try {
     await import('@napi-rs/canvas').then((m) => {
       const g = globalThis as Record<string, unknown>;
@@ -79,7 +79,7 @@ export async function extractPdf(data: Uint8Array): Promise<Extracted> {
     }
     return { ok: false, status: 'failed', note: 'This file could not be read as a PDF.', text: '', wordCount: 0, isPdf: true };
   }
-  if (doc.numPages > LIMITS.maxPages) {
+  if (!noLimits && doc.numPages > LIMITS.maxPages) {
     return { ok: false, status: 'too_big', note: `This book has ${doc.numPages} pages; the beta limit is ${LIMITS.maxPages}.`, text: '', wordCount: 0, isPdf: true, pageCount: doc.numPages };
   }
 
@@ -238,14 +238,15 @@ export function extractPlain(raw: string): Extracted {
   return { ok: true, status: 'ready', text, wordCount: wordCount(text), title, author, isPdf: false };
 }
 
-export async function extractAny(data: Uint8Array, fileName: string): Promise<Extracted> {
+/** Read any supported file. Learners' uploads have size limits; admin library uploads do not (`noLimits`). */
+export async function extractAny(data: Uint8Array, fileName: string, opts: { noLimits?: boolean } = {}): Promise<Extracted> {
   const lower = fileName.toLowerCase();
   let r: Extracted;
-  if (lower.endsWith('.pdf')) r = await extractPdf(data);
+  if (lower.endsWith('.pdf')) r = await extractPdf(data, opts.noLimits);
   else if (lower.endsWith('.epub')) r = await extractEpub(data);
   else if (lower.endsWith('.txt')) r = extractPlain(new TextDecoder().decode(data));
   else return { ok: false, status: 'failed', note: 'Please upload a PDF or EPUB file.', text: '', wordCount: 0, isPdf: false };
-  if (r.ok && r.wordCount > LIMITS.maxWords) {
+  if (r.ok && !opts.noLimits && r.wordCount > LIMITS.maxWords) {
     return { ...r, ok: false, status: 'too_big', note: `This book has about ${r.wordCount.toLocaleString('en-IN')} words; the beta limit is ${LIMITS.maxWords.toLocaleString('en-IN')}.`, text: '' };
   }
   return r;

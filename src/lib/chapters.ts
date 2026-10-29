@@ -83,7 +83,7 @@ function titleCase(s: string): string {
   return s
     .toLowerCase()
     .split(' ')
-    .map((w, i) => (i > 0 && small.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+    .map((w, i) => (i > 0 && small.has(w) ? w : w.replace(/\p{L}/u, (c) => c.toUpperCase())))
     .join(' ');
 }
 

@@ -214,10 +214,13 @@
   },
   {
    "slug": "ramcharitmanas-growse",
-   "title": "Ramcharitmanas",
+   "title": "Ramcharitmanas (The Ramayana of Tulsi Das)",
    "author": "Tulsidas, translated by F. S. Growse",
    "subject": "spiritual",
-   "note": "Only scanned copies of Growse found so far; needs a text source."
+   "note": "Text cleaned from a scan: a few spelling slips may remain. Seven books (kands), split into readable parts.",
+   "edition": "6th edition (1914), cleaned from a scanned copy",
+   "url": "data/texts/ramcharitmanas-growse.txt",
+   "verified": true
   },
   {
    "slug": "mahabharata-ganguli-1",

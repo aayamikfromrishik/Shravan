@@ -59,8 +59,8 @@ export const POST = handle(async (req) => {
     const type = res.headers.get('content-type') || '';
     const buf = new Uint8Array(await res.arrayBuffer());
     kept = { bytes: buf, fileName: decodeURIComponent(new URL(b.url).pathname.split('/').pop() || 'book.txt') };
-    if (type.includes('pdf') || b.url.toLowerCase().endsWith('.pdf')) ex = await extractAny(buf, 'book.pdf');
-    else if (type.includes('epub') || b.url.toLowerCase().endsWith('.epub')) ex = await extractAny(buf, 'book.epub');
+    if (type.includes('pdf') || b.url.toLowerCase().endsWith('.pdf')) ex = await extractAny(buf, 'book.pdf', { noLimits: true });
+    else if (type.includes('epub') || b.url.toLowerCase().endsWith('.epub')) ex = await extractAny(buf, 'book.epub', { noLimits: true });
     else ex = extractPlain(new TextDecoder().decode(buf));
   } else {
     if (!b.path) throw new HttpError(400, 'Upload a file first.');
@@ -68,7 +68,7 @@ export const POST = handle(async (req) => {
     if (error || !file) throw new HttpError(404, 'Upload not found.');
     const bytes = new Uint8Array(await file.arrayBuffer());
     kept = { bytes, fileName: b.fileName || 'book.pdf' };
-    ex = await extractAny(bytes, b.fileName || 'book.pdf');
+    ex = await extractAny(bytes, b.fileName || 'book.pdf', { noLimits: true });
     await sb.storage.from('uploads').remove([b.path]);
   }
   if (!ex.ok) return Response.json({ ok: false, status: ex.status, note: ex.note });
