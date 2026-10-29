@@ -29,8 +29,9 @@ export const GET = handle(async (req) => {
       return `connected; ${count ?? 0} books`;
     }),
     run('Kept-files table (update 2)', async () => {
-      const { count, error } = await sb.from('book_files').select('*', { count: 'exact', head: true });
-      if (error) throw new Error('Not found. Run supabase/migrations/002_keep_files.sql in Supabase → SQL Editor.');
+      const { error: missing } = await sb.from('book_files').select('id').limit(1);
+      if (missing) throw new Error('Not found. Run supabase/migrations/002_keep_files.sql in Supabase → SQL Editor.');
+      const { count } = await sb.from('book_files').select('*', { count: 'exact', head: true });
       return `ready; ${count ?? 0} files kept`;
     }),
     run('Upload storage (Supabase)', async () => {
