@@ -4,6 +4,7 @@ import { db } from './server';
 import { putObject, objectUrl, removeObjects } from './files';
 import { lessonSpeech, toSentences, type Lesson } from './lesson';
 import type { Lang } from './config';
+import { VOICE_CATALOG } from './voices-catalog';
 
 export const SARVAM_MODEL = 'bulbul:v4-flash';
 export const INR_PER_10K_CHARS = Number(process.env.VOICE_INR_PER_10K || 10);
@@ -29,15 +30,8 @@ export const DEFAULT_VOICE: VoiceSettings = {
   },
 };
 
-/** Voices suggested in Admin (from Sarvam's catalogue). Any valid Sarvam voice name also works. */
-export const VOICE_SUGGESTIONS = [
-  'shubh_en_narration_gentle', 'shubh_en_narration', 'simran_en_narration', 'sarang_en_narration', 'shubh_en_audiobook',
-  'aditi_en_stories', 'aparna_en_edtech', 'kalpit_en_edtech', 'girish_en_documentary',
-  'roopa_hi_narration', 'simran_hi_narration', 'shilpa_hi_narration', 'tanya_hi_narration', 'anand_hi_documentary',
-  'ratan_hi_documentary', 'shruti_hi_edtech', 'ishita_hi_edtech', 'shubh_hi_devotional', 'ishita_hi_devotional',
-  'simran_enhi_companion', 'shubh_enhi_companion', 'ishita_enhi_companion', 'shalini_enhi_companion',
-  'roopa_bn_conversational', 'arnab_bn_conversation',
-];
+/** Voices suggested in Admin: Sarvam's full catalogue. Any valid Sarvam voice name also works. */
+export const VOICE_SUGGESTIONS = Object.values(VOICE_CATALOG).flatMap((l) => l.voices);
 
 export const sarvamReady = () => !!process.env.SARVAM_API_KEY?.trim();
 

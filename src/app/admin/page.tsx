@@ -4,6 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, daysLeft, downloadBookFile, fmtDate, uploadBook } from '@/lib/client';
 import { SUBJECTS } from '@/lib/config';
 import { useApp } from '@/components/AppProvider';
+import { GOOD_FOR_LESSONS, VOICE_CATALOG } from '@/lib/voices-catalog';
+
+const VOICE_SUGGESTIONS_COUNT = Object.values(VOICE_CATALOG).reduce((n, l) => n + l.voices.length, 0);
 import { ErrorNote, Loading } from '@/components/ui';
 
 interface AB {
@@ -694,20 +697,17 @@ const VOICE_LABELS: [VoiceKey, string, string][] = [
   ['spiritual_english', 'Spiritual books, English', 'en-IN'],
   ['spiritual_hindi', 'Spiritual books, Hindi', 'hi-IN'],
 ];
-const SAMPLE_LINES: Record<string, string> = {
-  'en-IN': 'Every morning, your purse is filled with twenty-four hours. No one can take them from you, and no one receives more or less than you do.',
-  'hi-IN': 'हर सुबह आपको चौबीस घंटे मिलते हैं। कोई इन्हें आपसे छीन नहीं सकता, और किसी को आपसे कम या ज़्यादा समय नहीं मिलता।',
-  mix: 'हर सुबह आपको twenty-four hours मिलते हैं, और यही आपकी सबसे बड़ी daily wealth है।',
-  'bn-IN': 'প্রতিদিন সকালে আপনি চব্বিশ ঘণ্টা পান। কেউ তা আপনার কাছ থেকে নিতে পারে না।',
-};
 
 function VoiceTab() {
   const [d, setD] = useState<{ settings: VoiceSettingsUI; suggestions: string[]; keySet: boolean; spentThisMonthInr: number; inrPer10kChars: number } | null>(null);
   const [form, setForm] = useState<VoiceSettingsUI | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [test, setTest] = useState({ text: SAMPLE_LINES['en-IN'], speaker: 'shubh_en_narration_gentle', lang: 'en-IN' });
-  const [testing, setTesting] = useState(false);
+  const [cat, setCat] = useState('en');
+  const [line, setLine] = useState(VOICE_CATALOG.en.sample);
+  const [lessonsOnly, setLessonsOnly] = useState(true);
+  const [search, setSearch] = useState('');
+  const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const load = useCallback(() => {
     api<{ settings: VoiceSettingsUI; suggestions: string[]; keySet: boolean; spentThisMonthInr: number; inrPer10kChars: number }>('/api/admin/voice')
       .then((r) => {
@@ -730,16 +730,18 @@ function VoiceTab() {
       setError((e as Error).message);
     }
   };
-  const listen = async () => {
-    setTesting(true);
+  const listen = async (speaker: string) => {
+    setPlayingVoice(speaker);
     setError(null);
     try {
-      const r = await api<{ audio: string }>('/api/admin/voice/test', { body: { text: test.text, speaker: test.speaker, lang: test.lang === 'mix' ? 'hi-IN' : test.lang, pace: form?.pace } });
-      await new Audio('data:audio/mpeg;base64,' + r.audio).play();
+      const r = await api<{ audio: string }>('/api/admin/voice/test', { body: { text: line, speaker, lang: VOICE_CATALOG[cat].code, pace: form?.pace } });
+      const a = new Audio('data:audio/mpeg;base64,' + r.audio);
+      a.onended = () => setPlayingVoice(null);
+      await a.play();
     } catch (e) {
       setError((e as Error).message);
+      setPlayingVoice(null);
     }
-    setTesting(false);
   };
 
   if (!d || !form) return error ? <ErrorNote error={error} /> : <Loading />;
@@ -789,34 +791,66 @@ function VoiceTab() {
       </div>
 
       <div className="card col">
-        <h3 style={{ margin: 0 }}>Voice tester</h3>
-        <p className="tiny muted" style={{ margin: 0 }}>Hear any voice before choosing it. Each try costs a fraction of a rupee.</p>
+        <h3 style={{ margin: 0 }}>All voices ({VOICE_SUGGESTIONS_COUNT})</h3>
+        <p className="tiny muted" style={{ margin: 0 }}>
+          Pick a language, tap ▶ to hear a voice read the line below, then choose where to use it. Each try costs a fraction of a rupee. Remember to Save above.
+        </p>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-          {[
-            ['en-IN', 'English'],
-            ['hi-IN', 'Hindi'],
-            ['mix', 'Mix'],
-            ['bn-IN', 'Bengali'],
-          ].map(([l, name]) => (
-            <button key={l} className={`btn small ${test.lang === l ? '' : 'ghost'}`} onClick={() => setTest({ ...test, lang: l, text: SAMPLE_LINES[l] })}>
-              {name}
+          {Object.entries(VOICE_CATALOG).map(([k, l]) => (
+            <button key={k} className={`btn small ${cat === k ? '' : 'ghost'}`} onClick={() => { setCat(k); setLine(l.sample); }}>
+              {l.label} ({l.voices.length})
             </button>
           ))}
         </div>
-        <textarea rows={3} value={test.text} onChange={(e) => setTest({ ...test, text: e.target.value })} />
-        <label className="col" style={{ gap: 4 }}>
-          <span className="small muted">Voice</span>
-          <input list="voice-names" value={test.speaker} onChange={(e) => setTest({ ...test, speaker: e.target.value.trim() })} />
-        </label>
-        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn small" onClick={listen} disabled={testing || !d.keySet}>
-            {testing ? 'Making…' : '▶ Listen'}
-          </button>
-          {VOICE_LABELS.map(([k, label]) => (
-            <button key={k} className="linkbtn small" onClick={() => setForm({ ...form, voices: { ...form.voices, [k]: test.speaker } })}>
-              Use for {label.toLowerCase()}
-            </button>
-          ))}
+        <textarea rows={2} value={line} onChange={(e) => setLine(e.target.value)} aria-label="Line to read" />
+        <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <label className="row" style={{ gap: 6 }}>
+            <input type="checkbox" checked={lessonsOnly} onChange={(e) => setLessonsOnly(e.target.checked)} />
+            <span className="small">Only styles suited to lessons (narration, stories, teacher, documentary, devotional, companion)</span>
+          </label>
+          <input placeholder="Search a name or style" value={search} onChange={(e) => setSearch(e.target.value)} style={{ maxWidth: 220 }} />
+        </div>
+        <div className="tablewrap" style={{ padding: 0 }}>
+          <table className="admin">
+            <tbody>
+              {VOICE_CATALOG[cat].voices
+                .filter((v) => (!lessonsOnly || GOOD_FOR_LESSONS.test(v)) && v.includes(search.trim().toLowerCase()))
+                .map((v) => {
+                  const [person, , ...style] = v.split('_');
+                  return (
+                    <tr key={v}>
+                      <td style={{ width: 44 }}>
+                        <button className="btn small ghost" onClick={() => listen(v)} disabled={!!playingVoice || !d.keySet} aria-label={`Listen to ${v}`}>
+                          {playingVoice === v ? '…' : '▶'}
+                        </button>
+                      </td>
+                      <td>
+                        <b style={{ textTransform: 'capitalize' }}>{person}</b> <span className="small muted">{style.join(' ')}</span>
+                        <div className="tiny muted">{v}</div>
+                      </td>
+                      <td>
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            const k = e.target.value as VoiceKey;
+                            if (k) setForm({ ...form, voices: { ...form.voices, [k]: v } });
+                          }}
+                          aria-label={`Use ${v} for`}
+                        >
+                          <option value="">Use for…</option>
+                          {VOICE_LABELS.map(([k, label]) => (
+                            <option key={k} value={k}>
+                              {label}
+                              {form.voices[k] === v ? ' ✓' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
