@@ -7,6 +7,10 @@ import type { Lang } from './config';
 import { VOICE_CATALOG } from './voices-catalog';
 
 export const SARVAM_MODEL = 'bulbul:v4-flash';
+// "Classic" voices (one name, e.g. "anand") use the older Bulbul v3 model: the same person speaks every
+// language, at about 3× the price of v4 Flash.
+export const modelFor = (speaker: string) => (speaker.includes('_') ? SARVAM_MODEL : 'bulbul:v3');
+const priceFactor = (speaker: string) => (speaker.includes('_') ? 1 : 3);
 export const INR_PER_10K_CHARS = Number(process.env.VOICE_INR_PER_10K || 10);
 const MAX_CHARS = 2000; // Sarvam allows 2,500 per request; smaller parts start playing sooner
 
@@ -78,7 +82,7 @@ export async function sarvamSpeak(text: string, speaker: string, languageCode: s
     fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
       headers: { 'api-subscription-key': key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, language_code: lang, speaker, model: SARVAM_MODEL, pace, speech_sample_rate: 24000, output_audio_codec: 'mp3' }),
+      body: JSON.stringify({ text, language_code: lang, speaker, model: modelFor(speaker), pace, speech_sample_rate: 24000, output_audio_codec: 'mp3' }),
     });
   let res = await call(languageCode);
   // A mixed-language voice may expect the other language code; try once more.
@@ -101,8 +105,9 @@ export async function sarvamSpeak(text: string, speaker: string, languageCode: s
   return Uint8Array.from(Buffer.from(b64, 'base64'));
 }
 
-export async function logVoice(chars: number) {
-  await db().from('usage_log').insert({ kind: 'voice', chars });
+/** Counts characters at the v4 Flash rate (classic v3 voices count 3×), so the ₹ estimate stays right. */
+export async function logVoice(chars: number, speaker = '') {
+  await db().from('usage_log').insert({ kind: 'voice', chars: chars * priceFactor(speaker) });
 }
 
 export async function voiceSpentThisMonthInr(): Promise<number> {
@@ -176,7 +181,7 @@ export async function getOrCreateAudio(args: { versionId: string; lesson: Lesson
     }
     const chars = parts.reduce((a, p) => a + p.text.length, 0);
     await sb.from('lesson_audio').update({ status: 'ready', parts: saved, chars }).eq('id', rowId);
-    await logVoice(chars);
+    await logVoice(chars, speaker);
     return { status: 'ready', parts: await withUrls(saved), voice };
   } catch (e) {
     console.error('narration failed', e);

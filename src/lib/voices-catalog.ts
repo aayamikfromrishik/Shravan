@@ -1,6 +1,13 @@
 // Sarvam Bulbul v4 Flash voices (from Sarvam's voice catalogue, Oct 2026).
 // Names read as <person>_<language>_<style>. Any new Sarvam voice name can also be typed in by hand.
-export const VOICE_CATALOG: Record<string, { label: string; code: string; sample: string; voices: string[] }> = {
+export const VOICE_CATALOG: Record<string, { label: string; code: string; sample: string; voices: string[]; note?: string }> = {
+  classic: {
+    label: 'Classic (any language)',
+    code: 'en-IN',
+    sample: 'Every morning, your purse is filled with twenty-four hours. No one can take them from you, and no one receives more or less than you do.',
+    note: 'Older Bulbul v3 voices: the same person speaks English, Hindi, Bengali and other languages. About 3× the price of the newer voices (≈ ₹30 per 10,000 characters). Calm, narrative ones: anand, ashutosh, advait, roopa, mani, kabir, suhani.',
+    voices: 'anand, ashutosh, advait, roopa, mani, kabir, suhani, shubh, aditya, ritu, priya, neha, rahul, pooja, rohan, simran, kavya, amit, dev, ishita, shreya, ratan, varun, manan, sumit, aayan, tanya, tarun, sunny, gokul, vijay, shruti, mohit, kavitha, rehan, soham, rupali'.split(', '),
+  },
   en: {
     label: 'English',
     code: 'en-IN',
@@ -29,4 +36,4 @@ export const VOICE_CATALOG: Record<string, { label: string; code: string; sample
 };
 
 /** Styles that suit teaching books (shown first in Admin). */
-export const GOOD_FOR_LESSONS = /(narration|audiobook|stories|edtech|documentary|devotional|companion)/;
+export const GOOD_FOR_LESSONS = /(narration|audiobook|stories|edtech|documentary|devotional|companion|^(anand|ashutosh|advait|roopa|mani|kabir|suhani)$)/;

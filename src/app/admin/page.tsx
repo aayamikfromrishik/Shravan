@@ -708,6 +708,7 @@ function VoiceTab() {
   const [lessonsOnly, setLessonsOnly] = useState(true);
   const [search, setSearch] = useState('');
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
+  const [classicLang, setClassicLang] = useState('en-IN');
   const load = useCallback(() => {
     api<{ settings: VoiceSettingsUI; suggestions: string[]; keySet: boolean; spentThisMonthInr: number; inrPer10kChars: number }>('/api/admin/voice')
       .then((r) => {
@@ -734,7 +735,7 @@ function VoiceTab() {
     setPlayingVoice(speaker);
     setError(null);
     try {
-      const r = await api<{ audio: string }>('/api/admin/voice/test', { body: { text: line, speaker, lang: VOICE_CATALOG[cat].code, pace: form?.pace } });
+      const r = await api<{ audio: string }>('/api/admin/voice/test', { body: { text: line, speaker, lang: cat === 'classic' ? classicLang : VOICE_CATALOG[cat].code, pace: form?.pace } });
       const a = new Audio('data:audio/mpeg;base64,' + r.audio);
       a.onended = () => setPlayingVoice(null);
       await a.play();
@@ -802,6 +803,21 @@ function VoiceTab() {
             </button>
           ))}
         </div>
+        {VOICE_CATALOG[cat].note && <p className="tiny muted" style={{ margin: 0 }}>{VOICE_CATALOG[cat].note}</p>}
+        {cat === 'classic' && (
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            {[
+              ['en-IN', 'Read in English', VOICE_CATALOG.en.sample],
+              ['hi-IN', 'Read in Hindi', VOICE_CATALOG.hi.sample],
+              ['hi-IN', 'Read Mix', VOICE_CATALOG.enhi.sample],
+              ['bn-IN', 'Read in Bengali', VOICE_CATALOG.bn.sample],
+            ].map(([code, label, sample]) => (
+              <button key={label} className={`btn small ${classicLang === code && line === sample ? '' : 'ghost'}`} onClick={() => { setClassicLang(code); setLine(sample); }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         <textarea rows={2} value={line} onChange={(e) => setLine(e.target.value)} aria-label="Line to read" />
         <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
           <label className="row" style={{ gap: 6 }}>
@@ -817,6 +833,7 @@ function VoiceTab() {
                 .filter((v) => (!lessonsOnly || GOOD_FOR_LESSONS.test(v)) && v.includes(search.trim().toLowerCase()))
                 .map((v) => {
                   const [person, , ...style] = v.split('_');
+                  if (!v.includes('_')) style.push('classic · any language');
                   return (
                     <tr key={v}>
                       <td style={{ width: 44 }}>

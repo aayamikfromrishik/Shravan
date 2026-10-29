@@ -14,7 +14,7 @@ export const POST = handle(async (req) => {
   if (b.lang && !/^[a-z]{2}-IN$/.test(b.lang)) throw new HttpError(400, 'Unknown language.');
   try {
     const mp3 = await sarvamSpeak(text, b.speaker, b.lang || 'en-IN', Number(b.pace) || 1);
-    await logVoice(text.length);
+    await logVoice(text.length, b.speaker);
     return Response.json({ audio: Buffer.from(mp3).toString('base64') });
   } catch (e) {
     throw new HttpError(400, (e as Error).message);
