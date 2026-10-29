@@ -25,9 +25,14 @@ export default function MyBooks() {
     <main className="page">
       <div className="row between">
         <h1 style={{ fontSize: 26 }}>My books</h1>
-        <Link href="/add" className="btn small">
-          <Icon name="plus" size={18} /> Add
-        </Link>
+        <span className="row" style={{ gap: 8 }}>
+          <Link href="/downloads" className="btn small ghost">
+            Downloads
+          </Link>
+          <Link href="/add" className="btn small">
+            <Icon name="plus" size={18} /> Add
+          </Link>
+        </span>
       </div>
       <ErrorNote error={error} />
       {!books && !error && <Loading />}

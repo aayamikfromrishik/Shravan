@@ -92,6 +92,14 @@ function modeRule(mode: Mode) {
 function subjectRule(subject: string | null) {
   if (subject === 'spiritual')
     return 'This is a sacred or spiritual text. Be respectful and neutral: explain what the text says and how it is traditionally understood; where traditions differ, say so. Never rank one faith above another. Reflection questions should invite personal reflection, not judgement.';
+  if (subject === 'classics')
+    return 'This is a work of literature. Teach the chapter as a story: what happens, the characters\' choices and the ideas behind them, and what a reader can take into their own life. Keep events and characters exactly as the text has them.';
+  if (subject === 'lives')
+    return 'This is a life story or autobiography. Keep every fact (people, places, dates, events) exactly as the text gives it, and draw the lessons from what the person actually did and said.';
+  if (subject === 'indian')
+    return 'This is a classic of Indian wisdom (fables, strategy or ethics). Explain the teaching and how it is traditionally understood, retell stories faithfully, and connect them to everyday modern life respectfully.';
+  if (subject === 'history')
+    return 'This is an older book of history or science. Explain what the author says; where modern knowledge has clearly changed (for example later discoveries, or views of people and cultures that are now rejected), say so briefly and neutrally, without inventing details.';
   return '';
 }
 

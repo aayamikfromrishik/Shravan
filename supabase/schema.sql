@@ -29,7 +29,7 @@ create table if not exists books (
   author text,
   edition text,                       -- translation / edition taught
   language text not null default 'English',
-  subject text check (subject in ('habits','mind','work','communication','business','spiritual')),
+  subject text check (subject in ('habits','mind','work','communication','business','spiritual','classics','lives','indian','history')),
   kind text not null default 'text' check (kind in ('text','readalong')),
   is_library boolean not null default false,   -- shown to everyone in the library
   published boolean not null default false,    -- library books: visible only when published

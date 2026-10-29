@@ -6,6 +6,7 @@ import { api, ApiError } from '@/lib/client';
 import { lessonSpeech, toSentences, type Lesson, type LessonExample } from '@/lib/lesson';
 import { ErrorNote, Loading, Steps, TopBar } from '@/components/ui';
 import Player from '@/components/Player';
+import SaveOffline from '@/components/SaveOffline';
 import MicButton from '@/components/MicButton';
 
 type Lang = 'english' | 'hindi' | 'mix';
@@ -447,6 +448,7 @@ function ListenView({ d, showText, setShowText, sentences, savePos, onNext }: { 
         )}
       </div>
 
+      <SaveOffline versionId={d.versionId} book={d.book} chapter={d.chapter} lang={d.settings.lang} mode={d.settings.mode} lesson={d.lesson} />
       <button className="btn accent" onClick={onNext}>
         Next: Reflect
       </button>

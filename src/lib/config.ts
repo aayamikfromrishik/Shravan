@@ -23,6 +23,10 @@ export const SUBJECTS = [
   { id: 'communication', name: 'Communication & Relationships' },
   { id: 'business', name: 'Business & Creative Practice' },
   { id: 'spiritual', name: 'Spiritual library' },
+  { id: 'classics', name: 'Classics' },
+  { id: 'lives', name: 'Lives & Leaders' },
+  { id: 'indian', name: 'Indian Wisdom' },
+  { id: 'history', name: 'History & Big Ideas' },
 ] as const;
 
 export type SubjectId = (typeof SUBJECTS)[number]['id'];

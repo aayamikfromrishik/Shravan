@@ -146,7 +146,8 @@ class NarratorSpeaker implements Engine_ {
     if (!p || !this.audio.duration) return;
     const at = this.audio.currentTime / this.audio.duration;
     let i = p.start;
-    for (let k = p.start; k <= p.end; k++) if (this.share(p, k) <= at) i = k;
+    const last = Math.min(p.end, this.sentences.length - 1);
+    for (let k = p.start; k <= last; k++) if (this.share(p, k) <= at) i = k;
     if (i !== this.index) {
       this.index = i;
       this.onChange(i, this.playing);
@@ -220,22 +221,25 @@ export default function Player({
   start = 0,
   onPosition,
   versionId,
+  offlineParts,
 }: {
   sentences: string[];
   lang: Lang;
   start?: number;
   onPosition?: (i: number) => void;
   versionId?: string;
+  /** Saved audio (Downloads page): play these, no internet needed. */
+  offlineParts?: Part[];
 }) {
   const { me } = useApp();
-  const narratorAllowed = !!(me?.aiVoice && versionId);
+  const narratorAllowed = !!offlineParts || !!(me?.aiVoice && versionId);
   const [engine, setEngine] = useState<Engine>(() => {
     try {
       if (localStorage.getItem('shravan-voice') === 'phone') return 'phone';
     } catch {}
     return 'narrator';
   });
-  const useNarrator = engine === 'narrator' && narratorAllowed;
+  const useNarrator = !!offlineParts || (engine === 'narrator' && narratorAllowed);
   const [phoneOk, setPhoneOk] = useState(true);
   const [hasHindi, setHasHindi] = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -279,7 +283,8 @@ export default function Player({
       n.onChange = onChange;
       n.onBlocked = () => setNarr({ state: 'ready', note: 'Tap Play to start the narrator.' });
       speaker.current = n;
-      setNarr({ state: 'idle' });
+      if (offlineParts) n.parts = offlineParts;
+      setNarr({ state: offlineParts ? 'ready' : 'idle' });
       return () => {
         cancelled.current = true;
         n.destroy();
@@ -313,7 +318,7 @@ export default function Player({
       document.removeEventListener('visibilitychange', onHide);
       s.destroy();
     };
-  }, [sentences, lang, useNarrator]);
+  }, [sentences, lang, useNarrator, offlineParts]);
 
   // Narrator not available: carry on with the phone voice (just for now; the choice is not saved).
   const fallBackToPhone = (why: string) => {
@@ -405,7 +410,7 @@ export default function Player({
           {rate}×
         </button>
       </div>
-      {narratorAllowed && (
+      {narratorAllowed && !offlineParts && (
         <div className="row between" style={{ gap: 8 }}>
           <span className="tiny" style={{ color: 'var(--hero-muted)' }}>
             {loading

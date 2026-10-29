@@ -34,7 +34,7 @@ interface Ctx {
 const AppCtx = createContext<Ctx>({ session: null, me: null, ready: false, refresh: async () => {}, setView: () => {} });
 export const useApp = () => useContext(AppCtx);
 
-const PUBLIC = ['/signin'];
+const PUBLIC = ['/signin', '/downloads'];
 
 function applyView(v: string) {
   document.documentElement.dataset.view = v;
@@ -60,6 +60,11 @@ export default function AppProvider({ children }: { children: React.ReactNode })
     }
   }, []);
 
+  // The service worker keeps the app usable offline (Downloads) and shows phone notifications.
+  useEffect(() => {
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }, []);
+
   useEffect(() => {
     const sb = supabase();
     sb.auth.getSession().then(({ data }) => {
@@ -77,7 +82,7 @@ export default function AppProvider({ children }: { children: React.ReactNode })
       const extra = /error/.test(window.location.search + window.location.hash) ? window.location.search + window.location.hash : '';
       router.replace('/signin' + extra);
     }
-    if (session) refresh();
+    if (session && navigator.onLine !== false) refresh();
   }, [ready, session, path, router, refresh]);
 
   const setView = useCallback(

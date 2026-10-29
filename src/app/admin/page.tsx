@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, daysLeft, downloadBookFile, fmtDate, uploadBook } from '@/lib/client';
 import { SUBJECTS } from '@/lib/config';
 import { useApp } from '@/components/AppProvider';
@@ -23,7 +23,7 @@ interface AB {
   word_count: number | null;
   rights: string | null;
 }
-type Tab = 'library' | 'starter' | 'add' | 'flags' | 'learners' | 'usage' | 'voice' | 'health';
+type Tab = 'library' | 'starter' | 'add' | 'bulk' | 'flags' | 'learners' | 'usage' | 'voice' | 'health';
 
 export default function Admin() {
   const { me } = useApp();
@@ -40,6 +40,7 @@ export default function Admin() {
     ['library', 'Library'],
     ['starter', 'Starter library'],
     ['add', 'Add a book'],
+    ['bulk', 'Create in bulk'],
     ['flags', 'Flagged lessons'],
     ['learners', 'Learners'],
     ['usage', 'Usage & costs'],
@@ -70,6 +71,7 @@ export default function Admin() {
       {tab === 'flags' && <FlagsTab />}
       {tab === 'learners' && <LearnersTab />}
       {tab === 'usage' && <UsageTab />}
+      {tab === 'bulk' && <BulkTab />}
       {tab === 'voice' && <VoiceTab />}
       {tab === 'health' && <HealthTab />}
     </main>
@@ -594,7 +596,7 @@ function StarterTab() {
             Import everything else ({ready.length})
           </button>
           <button className="btn small ghost" disabled={busy} onClick={() => importList(books.filter((b) => b.imported && b.url))}>
-            Keep original files of imported books
+            Update imported books (keep files, sections)
           </button>
         </div>
         {own.map((o) => (
@@ -869,6 +871,190 @@ function VoiceTab() {
             </tbody>
           </table>
         </div>
+      </div>
+    </section>
+  );
+}
+
+type BMode = 'key' | 'examples' | 'complete';
+type BLevel = 'basic' | 'normal' | 'advanced';
+type BLang = 'english' | 'hindi' | 'mix';
+interface BulkItemUI {
+  chapterId: string;
+  idx: number;
+  part: 'free' | 'full';
+  mode: BMode;
+  level: BLevel;
+  lang: BLang;
+}
+const MODE_NAMES: Record<BMode, string> = { key: 'Key Ideas Only', examples: 'Key Ideas + Examples', complete: 'Complete Learning' };
+const LEVEL_NAMES: Record<BLevel, string> = { basic: 'Simple English', normal: 'Normal', advanced: 'Advanced' };
+const LANG_NAMES: Record<BLang, string> = { english: 'English', hindi: 'Hindi', mix: 'Mix' };
+
+function Checks<T extends string>({ names, value, onChange }: { names: Record<T, string>; value: T[]; onChange: (v: T[]) => void }) {
+  return (
+    <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+      {(Object.keys(names) as T[]).map((k) => (
+        <button key={k} className={`btn small ${value.includes(k) ? '' : 'ghost'}`} aria-pressed={value.includes(k)} onClick={() => onChange(value.includes(k) ? value.filter((x) => x !== k) : [...value, k])}>
+          {names[k]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function BulkTab() {
+  const [books, setBooks] = useState<AB[] | null>(null);
+  const [bookId, setBookId] = useState('');
+  const [chapters, setChapters] = useState<{ idx: number; title: string }[]>([]);
+  const [from, setFrom] = useState(1);
+  const [to, setTo] = useState(1);
+  const [modes, setModes] = useState<BMode[]>(['examples']);
+  const [levels, setLevels] = useState<BLevel[]>(['normal']);
+  const [langs, setLangs] = useState<BLang[]>(['english']);
+  const [audio, setAudio] = useState(true);
+  const [plan, setPlan] = useState<{ items: BulkItemUI[]; total: number; lessonsToMake: number; audioToMake: number; estimateInr: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(0);
+  const [log, setLog] = useState<string[]>([]);
+  const stop = useRef(false);
+
+  useEffect(() => {
+    api<{ books: AB[] }>('/api/admin/books')
+      .then((r) => setBooks(r.books.filter((b) => !b.needs_own_copy && b.status === 'ready')))
+      .catch((e) => setError(e.message));
+  }, []);
+  useEffect(() => {
+    setPlan(null);
+    if (!bookId) return setChapters([]);
+    api<{ chapters: { idx: number; title: string }[] }>(`/api/books/${bookId}`)
+      .then((r) => {
+        setChapters(r.chapters);
+        setFrom(1);
+        setTo(r.chapters.length);
+      })
+      .catch((e) => setError(e.message));
+  }, [bookId]);
+
+  const makePlan = async () => {
+    setError(null);
+    setPlan(null);
+    try {
+      setPlan(await api('/api/admin/generate/plan', { body: { bookId, from, to, modes, levels, langs, audio } }));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+  const run = async () => {
+    if (!plan) return;
+    stop.current = false;
+    setRunning(true);
+    setDone(0);
+    setLog([]);
+    let i = 0;
+    const next = async (): Promise<void> => {
+      while (!stop.current && i < plan.items.length) {
+        const it = plan.items[i++];
+        const label = `Ch ${it.idx}${it.part === 'free' ? ' (free part)' : ''} · ${MODE_NAMES[it.mode]} · ${LEVEL_NAMES[it.level]} · ${LANG_NAMES[it.lang]}`;
+        try {
+          const r = await api<{ lesson: string; audio: string }>('/api/admin/generate', { body: { item: it, audio } });
+          setLog((l) => [`${r.lesson === 'failed' ? '✗' : '✓'} ${label}: lesson ${r.lesson}${audio ? `, narration ${r.audio}` : ''}`, ...l]);
+        } catch (e) {
+          setLog((l) => [`✗ ${label}: ${(e as Error).message}`, ...l]);
+        }
+        setDone((d) => d + 1);
+      }
+    };
+    await Promise.all([next(), next()]); // two at a time
+    setRunning(false);
+  };
+
+  if (!books) return error ? <ErrorNote error={error} /> : <Loading />;
+  return (
+    <section className="col">
+      <ErrorNote error={error} />
+      <div className="card col">
+        <p className="small" style={{ margin: 0 }}>
+          Create lessons (and their narration) ahead of time, so learners never wait. Anything already made is skipped and costs nothing. Keep this page open while it runs.
+        </p>
+        <label className="col" style={{ gap: 4 }}>
+          <span className="small muted">Book</span>
+          <select value={bookId} onChange={(e) => setBookId(e.target.value)}>
+            <option value="">Choose a book…</option>
+            {books.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        {chapters.length > 0 && (
+          <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
+            <label className="col" style={{ gap: 4 }}>
+              <span className="small muted">From chapter</span>
+              <select value={from} onChange={(e) => { setFrom(Number(e.target.value)); setPlan(null); }}>
+                {chapters.map((c) => (
+                  <option key={c.idx} value={c.idx}>
+                    {c.idx}. {c.title.slice(0, 40)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="col" style={{ gap: 4 }}>
+              <span className="small muted">To chapter</span>
+              <select value={to} onChange={(e) => { setTo(Number(e.target.value)); setPlan(null); }}>
+                {chapters.map((c) => (
+                  <option key={c.idx} value={c.idx}>
+                    {c.idx}. {c.title.slice(0, 40)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+        <span className="small muted">Modes</span>
+        <Checks names={MODE_NAMES} value={modes} onChange={(v) => { setModes(v); setPlan(null); }} />
+        <span className="small muted">English levels</span>
+        <Checks names={LEVEL_NAMES} value={levels} onChange={(v) => { setLevels(v); setPlan(null); }} />
+        <span className="small muted">Languages</span>
+        <Checks names={LANG_NAMES} value={langs} onChange={(v) => { setLangs(v); setPlan(null); }} />
+        <label className="row" style={{ gap: 8 }}>
+          <input type="checkbox" checked={audio} onChange={(e) => { setAudio(e.target.checked); setPlan(null); }} />
+          <span>Also make the narration (uses the voices set in Narrator voice)</span>
+        </label>
+        <div className="row" style={{ gap: 8 }}>
+          <button className="btn small ghost" onClick={makePlan} disabled={!bookId || running}>
+            Check what it will cost
+          </button>
+          {plan && !running && (
+            <button className="btn small" onClick={run} disabled={!plan.lessonsToMake && !plan.audioToMake}>
+              Create {plan.total} version{plan.total === 1 ? '' : 's'}
+            </button>
+          )}
+          {running && (
+            <button className="btn small ghost" onClick={() => (stop.current = true)}>
+              Stop
+            </button>
+          )}
+        </div>
+        {plan && (
+          <p className="small" style={{ margin: 0 }}>
+            {plan.total} versions: {plan.lessonsToMake} lessons to write{audio ? ` and ${plan.audioToMake} narrations to record` : ''}. Estimated cost: <b>about ₹{plan.estimateInr}</b> (a rough guide; actual cost shows in Usage &amp; costs). Time: about {Math.max(1, Math.round(((plan.lessonsToMake * 40 + plan.audioToMake * 20) / 2) / 60))} min.
+          </p>
+        )}
+        {(running || done > 0) && plan && (
+          <div className="bar" aria-label="Progress" style={{ height: 6, background: 'var(--border)', borderRadius: 3 }}>
+            <div style={{ width: `${Math.round((done / plan.total) * 100)}%`, height: '100%', background: 'var(--accent)', borderRadius: 3 }} />
+          </div>
+        )}
+        {log.length > 0 && (
+          <pre className="tiny" style={{ whiteSpace: 'pre-wrap', margin: 0, maxHeight: 320, overflow: 'auto' }}>
+            {done}/{plan?.total} done{running ? '…' : ''}
+            {'\n'}
+            {log.join('\n')}
+          </pre>
+        )}
       </div>
     </section>
   );

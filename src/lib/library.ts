@@ -53,6 +53,8 @@ export async function importBook(sb: SupabaseClient, slug: string, adminId: stri
 
   const { data: have } = await sb.from('books').select('id').eq('slug', slug).maybeSingle();
   if (have) {
+    // Keep the section in line with the catalogue (books can move between sections).
+    await sb.from('books').update({ subject: b.subject }).eq('id', have.id).neq('subject', b.subject);
     // Added before files were kept: fetch the original once more and keep it.
     const { data: kept } = await sb.from('book_files').select('id').eq('book_id', have.id).is('user_id', null).limit(1);
     if (!kept?.length && b.url) {

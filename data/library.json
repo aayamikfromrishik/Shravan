@@ -14,7 +14,7 @@
    "slug": "franklin-autobiography",
    "title": "Autobiography of Benjamin Franklin",
    "author": "Benjamin Franklin",
-   "subject": "habits",
+   "subject": "lives",
    "url": "https://www.gutenberg.org/cache/epub/20203/pg20203.txt"
   },
   {
@@ -371,6 +371,175 @@
    "author": "Rabindranath Tagore",
    "subject": "spiritual",
    "url": "https://www.gutenberg.org/cache/epub/6842/pg6842.txt"
+  },
+  {
+   "slug": "hesse-siddhartha",
+   "title": "Siddhartha",
+   "author": "Hermann Hesse",
+   "subject": "classics",
+   "url": "https://www.gutenberg.org/cache/epub/2500/pg2500.txt",
+   "edition": "English translation (Project Gutenberg volunteers)"
+  },
+  {
+   "slug": "tagore-gitanjali",
+   "title": "Gitanjali",
+   "author": "Rabindranath Tagore",
+   "subject": "classics",
+   "url": "https://www.gutenberg.org/cache/epub/7164/pg7164.txt"
+  },
+  {
+   "slug": "dickens-christmas-carol",
+   "title": "A Christmas Carol",
+   "author": "Charles Dickens",
+   "subject": "classics",
+   "url": "https://www.gutenberg.org/cache/epub/46/pg46.txt"
+  },
+  {
+   "slug": "tolstoy-what-men-live-by",
+   "title": "What Men Live By, and Other Tales",
+   "author": "Leo Tolstoy",
+   "subject": "classics",
+   "url": "https://www.gutenberg.org/cache/epub/6157/pg6157.txt"
+  },
+  {
+   "slug": "bunyan-pilgrims-progress",
+   "title": "The Pilgrim's Progress",
+   "author": "John Bunyan",
+   "subject": "classics",
+   "url": "https://www.gutenberg.org/cache/epub/131/pg131.txt"
+  },
+  {
+   "slug": "rand-fountainhead",
+   "title": "The Fountainhead",
+   "author": "Ayn Rand",
+   "subject": "classics",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "gandhi-experiments-with-truth",
+   "title": "The Story of My Experiments with Truth",
+   "author": "M. K. Gandhi, translated by Mahadev Desai",
+   "subject": "lives",
+   "url": "https://standardebooks.org/ebooks/mahatma-gandhi/the-story-of-my-experiments-with-truth/mahadev-desai/downloads/mahatma-gandhi_the-story-of-my-experiments-with-truth_mahadev-desai.epub"
+  },
+  {
+   "slug": "yogananda-autobiography-of-a-yogi",
+   "title": "Autobiography of a Yogi",
+   "author": "Paramahansa Yogananda",
+   "subject": "lives",
+   "url": "https://www.gutenberg.org/cache/epub/7452/pg7452.txt",
+   "edition": "First edition (1946)"
+  },
+  {
+   "slug": "washington-up-from-slavery",
+   "title": "Up from Slavery",
+   "author": "Booker T. Washington",
+   "subject": "lives",
+   "url": "https://www.gutenberg.org/cache/epub/2376/pg2376.txt"
+  },
+  {
+   "slug": "keller-story-of-my-life",
+   "title": "The Story of My Life",
+   "author": "Helen Keller",
+   "subject": "lives",
+   "url": "https://www.gutenberg.org/cache/epub/2397/pg2397.txt"
+  },
+  {
+   "slug": "panchatantra-ryder",
+   "title": "The Panchatantra",
+   "author": "Translated by Arthur W. Ryder",
+   "subject": "indian",
+   "url": "https://archive.org/download/in.ernet.dli.2015.149126/2015.149126.The-Panchatantra-Ed-1st.epub",
+   "note": "From a scanned copy (Digital Library of India); check the chapters after import."
+  },
+  {
+   "slug": "jataka-tales-babbitt",
+   "title": "Jataka Tales",
+   "author": "Retold by Ellen C. Babbitt",
+   "subject": "indian",
+   "url": "https://www.gutenberg.org/cache/epub/62514/pg62514.txt"
+  },
+  {
+   "slug": "hitopadesha-arnold",
+   "title": "Hitopadesha (The Book of Good Counsels) and other Hindu classics",
+   "author": "Translated by Edwin Arnold and others",
+   "subject": "indian",
+   "url": "https://www.gutenberg.org/cache/epub/13268/pg13268.txt",
+   "edition": "Hindu Literature (1900): Book of Good Counsels, Nala and Damayanti, Ramayana, Sakoontala"
+  },
+  {
+   "slug": "kautilya-arthashastra",
+   "title": "Arthashastra",
+   "author": "Kautilya, translated by R. Shamasastry",
+   "subject": "indian",
+   "url": "https://archive.org/download/in.gov.ignca.900/900_djvu.txt",
+   "note": "Scanned 1951 reprint of the 1915 translation (OCR); check the chapters after import."
+  },
+  {
+   "slug": "thirukkural-pope",
+   "title": "Thirukkural",
+   "author": "Thiruvalluvar, translated by G. U. Pope (1886)",
+   "subject": "indian",
+   "url": "https://archive.org/download/tiruvalluvanayan00tiruuoft/tiruvalluvanayan00tiruuoft_djvu.txt",
+   "note": "Scanned 1886 edition with Tamil and English (OCR); check the chapters after import."
+  },
+  {
+   "slug": "wells-short-history",
+   "title": "A Short History of the World",
+   "author": "H. G. Wells",
+   "subject": "history",
+   "url": "https://www.gutenberg.org/cache/epub/35461/pg35461.txt"
+  },
+  {
+   "slug": "vanloon-story-of-mankind",
+   "title": "The Story of Mankind",
+   "author": "Hendrik Willem van Loon",
+   "subject": "history",
+   "url": "https://www.gutenberg.org/cache/epub/754/pg754.txt"
+  },
+  {
+   "slug": "darwin-origin-of-species",
+   "title": "On the Origin of Species",
+   "author": "Charles Darwin",
+   "subject": "history",
+   "url": "https://www.gutenberg.org/cache/epub/1228/pg1228.txt",
+   "edition": "First edition (1859)"
+  },
+  {
+   "slug": "einstein-relativity",
+   "title": "Relativity: The Special and General Theory",
+   "author": "Albert Einstein",
+   "subject": "history",
+   "url": "https://www.gutenberg.org/cache/epub/5001/pg5001.txt"
+  },
+  {
+   "slug": "harari-sapiens",
+   "title": "Sapiens",
+   "author": "Yuval Noah Harari",
+   "subject": "history",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "kiyosaki-rich-dad-poor-dad",
+   "title": "Rich Dad Poor Dad",
+   "author": "Robert T. Kiyosaki",
+   "subject": "work",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "byrne-the-secret",
+   "title": "The Secret",
+   "author": "Rhonda Byrne",
+   "subject": "mind",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "haanel-master-key-system",
+   "title": "The Master Key System",
+   "author": "Charles F. Haanel",
+   "subject": "mind",
+   "url": "https://archive.org/download/masterkeysystem1919haan/masterkeysystem1919haan_djvu.txt",
+   "note": "Scanned text (OCR); check the chapters after import."
   }
  ],
  "ownBooks": [

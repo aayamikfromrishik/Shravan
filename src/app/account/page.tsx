@@ -56,6 +56,11 @@ export default function Account() {
         {me.unread > 0 ? <span className="chip gold">{me.unread} new</span> : <span className="small muted">None new</span>}
       </Link>
 
+      <Link href="/downloads" className="card row between" style={{ textDecoration: 'none', color: 'var(--ink)' }}>
+        <span>Downloads (offline listening)</span>
+        <span className="small muted">{me.isSubscriber || me.isAdmin ? 'Open' : 'Premium'}</span>
+      </Link>
+
       <fieldset className="col" style={{ border: 'none', padding: 0, margin: 0 }}>
         <legend className="label" style={{ marginBottom: 8 }}>
           App view
