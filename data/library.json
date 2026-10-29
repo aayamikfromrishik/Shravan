@@ -248,11 +248,12 @@
    "url": "https://www.gutenberg.org/cache/epub/15477/pg15477.txt"
   },
   {
-   "slug": "quran-pickthall",
-   "title": "The Quran",
-   "author": "Translated by M. Pickthall",
+   "slug": "quran-rodwell",
+   "title": "The Koran",
+   "author": "Translated by J. M. Rodwell (1861)",
    "subject": "spiritual",
-   "note": "No clean public copy of Pickthall found yet. Choose: wait for one, or use an older translation (Rodwell 1861 or Palmer 1880)."
+   "url": "https://www.gutenberg.org/cache/epub/3434/pg3434.txt",
+   "note": "Rodwell arranges the surahs roughly in the order they were revealed, not the usual order."
   },
   {
    "slug": "bible-kjv",
@@ -261,11 +262,52 @@
    "url": "https://www.gutenberg.org/cache/epub/10/pg10.txt"
   },
   {
-   "slug": "guru-granth-sahib",
-   "title": "Guru Granth Sahib",
-   "author": "Translated by M. A. Macauliffe",
+   "slug": "macauliffe-sikh-religion-1",
+   "title": "The Sikh Religion: Gurus and Sacred Writings, Volume 1",
+   "author": "Max Arthur Macauliffe (1909)",
    "subject": "spiritual",
-   "note": "Copyright check pending: do not add until confirmed."
+   "url": "https://archive.org/download/sikhreligionitsg01unse/sikhreligionitsg01unse_djvu.txt",
+   "note": "Scanned text (OCR): translations of the Gurus' hymns from the Guru Granth Sahib with their lives. Check the chapters after import."
+  },
+  {
+   "slug": "macauliffe-sikh-religion-2",
+   "title": "The Sikh Religion: Gurus and Sacred Writings, Volume 2",
+   "author": "Max Arthur Macauliffe (1909)",
+   "subject": "spiritual",
+   "url": "https://archive.org/download/sikhreligionitsg02unse/sikhreligionitsg02unse_djvu.txt",
+   "note": "Scanned text (OCR): translations of the Gurus' hymns from the Guru Granth Sahib with their lives. Check the chapters after import."
+  },
+  {
+   "slug": "macauliffe-sikh-religion-3",
+   "title": "The Sikh Religion: Gurus and Sacred Writings, Volume 3",
+   "author": "Max Arthur Macauliffe (1909)",
+   "subject": "spiritual",
+   "url": "https://archive.org/download/sikhreligionitsg03unse/sikhreligionitsg03unse_djvu.txt",
+   "note": "Scanned text (OCR): translations of the Gurus' hymns from the Guru Granth Sahib with their lives. Check the chapters after import."
+  },
+  {
+   "slug": "macauliffe-sikh-religion-4",
+   "title": "The Sikh Religion: Gurus and Sacred Writings, Volume 4",
+   "author": "Max Arthur Macauliffe (1909)",
+   "subject": "spiritual",
+   "url": "https://archive.org/download/sikhreligionitsg04unse/sikhreligionitsg04unse_djvu.txt",
+   "note": "Scanned text (OCR): translations of the Gurus' hymns from the Guru Granth Sahib with their lives. Check the chapters after import."
+  },
+  {
+   "slug": "macauliffe-sikh-religion-5",
+   "title": "The Sikh Religion: Gurus and Sacred Writings, Volume 5",
+   "author": "Max Arthur Macauliffe (1909)",
+   "subject": "spiritual",
+   "url": "https://archive.org/download/sikhreligionitsg05unse/sikhreligionitsg05unse_djvu.txt",
+   "note": "Scanned text (OCR): translations of the Gurus' hymns from the Guru Granth Sahib with their lives. Check the chapters after import."
+  },
+  {
+   "slug": "macauliffe-sikh-religion-6",
+   "title": "The Sikh Religion: Gurus and Sacred Writings, Volume 6",
+   "author": "Max Arthur Macauliffe (1909)",
+   "subject": "spiritual",
+   "url": "https://archive.org/download/sikhreligionitsg06unse/sikhreligionitsg06unse_djvu.txt",
+   "note": "Scanned text (OCR): translations of the Gurus' hymns from the Guru Granth Sahib with their lives. Check the chapters after import."
   },
   {
    "slug": "zend-avesta",
