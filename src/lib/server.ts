@@ -76,7 +76,8 @@ export function handle(fn: (req: Request, ctx: { params: Promise<Record<string, 
     } catch (e) {
       if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
       console.error(e);
-      return Response.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
+      const detail = e instanceof Error ? e.message.slice(0, 200) : '';
+      return Response.json({ error: `Something went wrong. Please try again.${detail ? ` (${detail})` : ''}` }, { status: 500 });
     }
   };
 }

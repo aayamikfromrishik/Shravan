@@ -18,7 +18,56 @@ export interface Extracted {
 }
 
 // ---------- PDF ----------
+// The PDF reader expects a few browser drawing classes. We only read text, so simple stand-ins
+// are enough when the server has no canvas library (as on some hosts).
+function ensureDrawingClasses() {
+  const g = globalThis as Record<string, unknown>;
+  if (!g.DOMMatrix) {
+    class DOMMatrixLite {
+      a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+      constructor(init?: number[]) {
+        if (Array.isArray(init) && init.length >= 6) [this.a, this.b, this.c, this.d, this.e, this.f] = init;
+      }
+      multiplySelf(m: DOMMatrixLite) {
+        const { a, b, c, d, e, f } = this;
+        this.a = a * m.a + c * m.b; this.b = b * m.a + d * m.b;
+        this.c = a * m.c + c * m.d; this.d = b * m.c + d * m.d;
+        this.e = a * m.e + c * m.f + e; this.f = b * m.e + d * m.f + f;
+        return this;
+      }
+      preMultiplySelf(m: DOMMatrixLite) {
+        const r = new DOMMatrixLite([m.a, m.b, m.c, m.d, m.e, m.f]).multiplySelf(this);
+        Object.assign(this, { a: r.a, b: r.b, c: r.c, d: r.d, e: r.e, f: r.f });
+        return this;
+      }
+      multiply(m: DOMMatrixLite) { return new DOMMatrixLite([this.a, this.b, this.c, this.d, this.e, this.f]).multiplySelf(m); }
+      translate(x = 0, y = 0) { return this.multiply(new DOMMatrixLite([1, 0, 0, 1, x, y])); }
+      scale(x = 1, y = x) { return this.multiply(new DOMMatrixLite([x, 0, 0, y, 0, 0])); }
+      translateSelf(x = 0, y = 0) { return this.multiplySelf(new DOMMatrixLite([1, 0, 0, 1, x, y])); }
+      scaleSelf(x = 1, y = x) { return this.multiplySelf(new DOMMatrixLite([x, 0, 0, y, 0, 0])); }
+      invertSelf() {
+        const { a, b, c, d, e, f } = this; const det = a * d - b * c || 1;
+        Object.assign(this, { a: d / det, b: -b / det, c: -c / det, d: a / det, e: (c * f - d * e) / det, f: (b * e - a * f) / det });
+        return this;
+      }
+      inverse() { return new DOMMatrixLite([this.a, this.b, this.c, this.d, this.e, this.f]).invertSelf(); }
+    }
+    g.DOMMatrix = DOMMatrixLite;
+  }
+  if (!g.ImageData) g.ImageData = class { constructor(public data: unknown, public width: number, public height: number) {} };
+  if (!g.Path2D) g.Path2D = class { addPath() {} moveTo() {} lineTo() {} bezierCurveTo() {} quadraticCurveTo() {} closePath() {} rect() {} };
+}
+
 export async function extractPdf(data: Uint8Array): Promise<Extracted> {
+  try {
+    await import('@napi-rs/canvas').then((m) => {
+      const g = globalThis as Record<string, unknown>;
+      g.DOMMatrix ??= m.DOMMatrix; g.ImageData ??= m.ImageData; g.Path2D ??= m.Path2D;
+    });
+  } catch {
+    // no canvas library here: fall back to the simple stand-ins
+  }
+  ensureDrawingClasses();
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   let doc;
   try {
