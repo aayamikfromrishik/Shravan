@@ -8,9 +8,9 @@ export const LIMITS = {
   freePartWordsNoPages: 2000,   // EPUB / plain text: 7 pages ~ 2,000 words
   askPerChapter: 5,             // "Ask about this chapter" (subscribers)
   readAlongFollowUps: 5,        // Read-along follow-ups per chapter
-  maxUploadMB: 30,              // to test
-  maxPages: 500,                // to test
-  maxWords: 200_000,            // to test
+  maxUploadMB: 30,              // matches the 'uploads' storage bucket limit
+  maxPages: 1000,               // long novels (e.g. 700-page paperbacks) fit
+  maxWords: 400_000,            // most single books fit; giant multi-volume works should be split
   minWordsPerPageForText: 25,   // below this a PDF is treated as a scan
 };
 

@@ -73,7 +73,7 @@ function AddInner() {
             </label>
           </>
         )}
-        <span className="tiny muted">Text files only · up to 30 MB · up to 500 pages</span>
+        <span className="tiny muted">Text files only · up to 30 MB · up to 1,000 pages</span>
         <div className="note warn">Books bought on Kindle, Google Play or Apple Books are locked and can&apos;t be uploaded. Use Read-along for those.</div>
       </section>
 
