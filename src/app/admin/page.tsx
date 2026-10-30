@@ -914,6 +914,7 @@ function BulkTab() {
   const [many, setMany] = useState(false);
   const [sections, setSections] = useState<PickSection[] | null>(null);
   const [freePart, setFreePart] = useState(true);
+  const [upTo, setUpTo] = useState(1); // several books: chapters 1..upTo (100000 = whole book)
   const [books, setBooks] = useState<AB[] | null>(null);
   const [bookId, setBookId] = useState('');
   const [chapters, setChapters] = useState<{ idx: number; title: string }[]>([]);
@@ -965,7 +966,7 @@ function BulkTab() {
     try {
       setPlan(
         await api('/api/admin/generate/plan', {
-          body: many ? { bookIds: pickedIds, from: 1, to: 1, modes, levels, langs, audio, freePart } : { bookId, from, to, modes, levels, langs, audio, freePart },
+          body: many ? { bookIds: pickedIds, from: 1, to: upTo, modes, levels, langs, audio, freePart } : { bookId, from, to, modes, levels, langs, audio, freePart },
         }),
       );
     } catch (e) {
@@ -1016,14 +1017,25 @@ function BulkTab() {
               setLangs(['english', 'hindi']);
             }}
           >
-            Trial set: chapter 1 of several books
+            Several books
           </button>
         </div>
         {many && !sections && <Loading />}
         {many && sections && (
           <div className="col" style={{ gap: 8 }}>
+            <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+              {[
+                [1, 'Chapter 1 only'],
+                [3, 'First 3 chapters'],
+                [100000, 'Whole books'],
+              ].map(([n, label]) => (
+                <button key={n} className={`btn small ${upTo === n ? '' : 'ghost'}`} onClick={() => { setUpTo(n as number); setPlan(null); }}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <span className="small muted">
-              Chapter 1 of the ticked books ({pickedIds.length}). Three per section are ticked to start; books with ready-made samples come first. Business has only the books that have text (yours).
+              {upTo === 1 ? 'Chapter 1' : upTo === 100000 ? 'Every chapter' : `Chapters 1 to ${upTo}`} of the ticked books ({pickedIds.length}). Three per section are ticked to start; books with ready-made samples come first. Business has only the books that have text (yours).
             </span>
             {sections.map((s) => (
               <div key={s.id} className="col" style={{ gap: 4 }}>
