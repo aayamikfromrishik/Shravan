@@ -1,5 +1,6 @@
 import { bookIsFreeNow, db, getCaller, handle } from '@/lib/server';
 import { SUBJECTS } from '@/lib/config';
+import { bookProgress } from '@/lib/journey';
 
 export const GET = handle(async (req) => {
   const c = await getCaller(req);
@@ -40,7 +41,19 @@ export const GET = handle(async (req) => {
 
   const { count: openActions } = await sb.from('actions').select('*', { count: 'exact', head: true }).eq('user_id', c.user.id).eq('is_first', true).eq('done', false);
 
+  // Reading journey: what to read next.
+  const { data: j } = await sb.from('journeys').select('title,items').eq('user_id', c.user.id).maybeSingle();
+  let journey: { title: string; count: number; next: { id: string; title: string } | null } | null = null;
+  const jItems = ((j?.items || []) as { bookId: string }[]).map((i) => i.bookId);
+  if (jItems.length) {
+    const prog = await bookProgress(c.user.id, jItems);
+    const nextId = jItems.find((id) => !prog[id]?.total || prog[id].done < prog[id].total) || null;
+    const { data: nb } = nextId ? await sb.from('books').select('id,title').eq('id', nextId).maybeSingle() : { data: null };
+    journey = { title: j?.title || 'My learning journey', count: jItems.length, next: nb ? { id: nb.id, title: nb.title } : null };
+  }
+
   return Response.json({
+    journey,
     continue: continueList,
     freeNow,
     subjects: SUBJECTS.map((s) => ({ ...s, count: counts[s.id] || 0 })),

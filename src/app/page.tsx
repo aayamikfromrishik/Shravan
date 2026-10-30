@@ -6,6 +6,7 @@ import { useApp } from '@/components/AppProvider';
 import { BottomNav, ErrorNote, Icon, Loading } from '@/components/ui';
 
 interface Home {
+  journey: { title: string; count: number; next: { id: string; title: string } | null } | null;
   continue: { bookId: string; title: string; author: string | null; kind: string; chapterIdx: number; chapterId: string | null; chapterTitle: string | null; chapters: number; step: string }[];
   freeNow: { id: string; title: string; free_until: string }[];
   subjects: { id: string; name: string; count: number }[];
@@ -97,6 +98,22 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {data &&
+        (data.journey ? (
+          <Link href="/journey" className="card col" style={{ textDecoration: 'none', color: 'var(--ink)', gap: 4 }}>
+            <span className="tiny" style={{ color: 'var(--label)', fontWeight: 700, letterSpacing: '0.08em' }}>
+              YOUR JOURNEY · {data.journey.count} BOOKS
+            </span>
+            <b>{data.journey.title}</b>
+            <span className="small muted">{data.journey.next ? `Next: ${data.journey.next.title}` : 'Journey complete. Plan the next one.'}</span>
+          </Link>
+        ) : (
+          <Link href="/journey" className="card col" style={{ textDecoration: 'none', color: 'var(--ink)', gap: 4 }}>
+            <b>Plan your learning journey</b>
+            <span className="small muted">Choose the books you want to read, in your order, or tell SHRAVAN what you want to grow in and get a suggested path.</span>
+          </Link>
+        ))}
 
       <Link href="/add" className="btn ghost" style={{ borderStyle: 'dashed', borderColor: 'var(--link)' }}>
         <Icon name="plus" /> Add a book

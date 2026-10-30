@@ -284,3 +284,15 @@ alter table lesson_audio enable row level security;
 
 -- Voice usage is counted in characters.
 alter table usage_log add column if not exists chars int not null default 0;
+
+-- ---------- Update 5: reading journey (also in supabase/migrations/005_journey.sql) ----------
+create table if not exists journeys (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  title text,
+  keywords text,
+  items jsonb not null default '[]',   -- [{ "bookId": "...", "why": "..." }] in reading order
+  ai_day date,                          -- AI suggestions used today (fair-use limit)
+  ai_count int not null default 0,
+  updated_at timestamptz not null default now()
+);
+alter table journeys enable row level security;

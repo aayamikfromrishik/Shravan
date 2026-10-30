@@ -369,3 +369,62 @@ export async function pingClaude(): Promise<string> {
   const res = await anthropic().messages.create({ model: MODEL, max_tokens: 5, messages: [{ role: 'user', content: 'Reply with OK.' }] });
   return res.model;
 }
+
+// ---------- learning journey ----------
+export interface JourneySuggestion {
+  title: string;
+  intro: string;
+  books: { book_id: string; why: string }[];
+}
+
+/** Suggest an ordered reading journey from the learner's keywords, choosing ONLY from the given books. */
+export async function suggestJourney(args: {
+  keywords: string;
+  books: { id: string; title: string; author: string | null; section: string; ownCopy: boolean }[];
+  lang: Lang;
+  length: number;
+}): Promise<{ journey: JourneySuggestion; usage: Usage }> {
+  const list = args.books.map((b) => `${b.id} | ${b.title}${b.author ? ` (${b.author})` : ''} | ${b.section}${b.ownCopy ? ' | learner needs own copy' : ''}`).join('\n');
+  const language =
+    args.lang === 'hindi' ? 'Write the title, intro and reasons in simple Hindi (Devanagari).' : args.lang === 'mix' ? 'Write in natural Hinglish (Hindi in Devanagari, common English words kept in English).' : 'Write in clear, simple English.';
+  const prompt = `A learner wants a reading journey. In their words, what they want: "${args.keywords.slice(0, 400)}"
+
+Books available in SHRAVAN (id | title | section | note):
+${list}
+
+Choose ${args.length} books (fewer if fewer truly fit) from this list ONLY, in the order they should be read: start with the most approachable and foundational, then build up.
+Prefer books that do not need the learner's own copy, unless one of those is clearly the best fit.
+For each book give one short reason (max 25 words) linking it to what the learner asked for. Do not invent book content; base reasons on the title, author and section.
+Also give a short journey title (max 6 words) and a one-sentence intro.
+${language}`;
+  const ids = args.books.map((b) => b.id);
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['title', 'intro', 'books'],
+    properties: {
+      title: { type: 'string' },
+      intro: { type: 'string' },
+      books: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['book_id', 'why'],
+          properties: { book_id: { type: 'string', enum: ids }, why: { type: 'string' } },
+        },
+      },
+    },
+  };
+  const { data, usage } = await callJson<JourneySuggestion>({
+    system: 'You are SHRAVAN, a warm, practical reading guide. You recommend only books from the list you are given and never invent titles.',
+    prompt,
+    schema,
+    maxTokens: 1500,
+    effort: 'low',
+  });
+  const allowed = new Set(ids);
+  const seen = new Set<string>();
+  data.books = data.books.filter((b) => allowed.has(b.book_id) && !seen.has(b.book_id) && seen.add(b.book_id)).slice(0, 10);
+  return { journey: data, usage };
+}
