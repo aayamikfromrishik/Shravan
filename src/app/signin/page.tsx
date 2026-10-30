@@ -174,6 +174,9 @@ export default function SignIn() {
         <p className="center muted tiny" style={{ margin: 0 }}>
           Free to start · English and हिन्दी
         </p>
+        <p className="center tiny muted" style={{ margin: 0 }}>
+          By continuing you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy</a>.
+        </p>
       </div>
     </main>
   );

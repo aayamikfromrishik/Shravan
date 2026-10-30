@@ -34,7 +34,7 @@ interface Ctx {
 const AppCtx = createContext<Ctx>({ session: null, me: null, ready: false, refresh: async () => {}, setView: () => {} });
 export const useApp = () => useContext(AppCtx);
 
-const PUBLIC = ['/signin', '/downloads'];
+const PUBLIC = ['/signin', '/downloads', '/privacy', '/terms'];
 
 function applyView(v: string) {
   document.documentElement.dataset.view = v;
