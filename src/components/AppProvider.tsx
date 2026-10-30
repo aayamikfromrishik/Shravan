@@ -82,8 +82,13 @@ export default function AppProvider({ children }: { children: React.ReactNode })
       const extra = /error/.test(window.location.search + window.location.hash) ? window.location.search + window.location.hash : '';
       router.replace('/signin' + extra);
     }
-    if (session && navigator.onLine !== false) refresh();
-  }, [ready, session, path, router, refresh]);
+  }, [ready, session, path, router]);
+
+  // Load the learner's profile once per sign-in (not on every screen change).
+  const userId = session?.user.id;
+  useEffect(() => {
+    if (userId && navigator.onLine !== false) refresh();
+  }, [userId, refresh]);
 
   const setView = useCallback(
     (v: 'basic' | 'peacock') => {

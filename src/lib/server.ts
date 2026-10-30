@@ -42,9 +42,20 @@ export interface Profile {
 export async function getCaller(req: Request): Promise<Caller> {
   const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) throw new HttpError(401, 'Please sign in.');
-  const { data, error } = await db().auth.getUser(token);
-  if (error || !data.user) throw new HttpError(401, 'Please sign in again.');
-  const user = data.user;
+  // Fast path: check the token's signature locally (no round trip to the sign-in server).
+  let user: User | null = null;
+  try {
+    const { data: c } = await db().auth.getClaims(token);
+    const cl = c?.claims as { sub?: string; email?: string; user_metadata?: Record<string, unknown>; exp?: number } | undefined;
+    if (cl?.sub) user = { id: cl.sub, email: cl.email, user_metadata: cl.user_metadata || {} } as unknown as User;
+  } catch {
+    user = null;
+  }
+  if (!user) {
+    const { data, error } = await db().auth.getUser(token);
+    if (error || !data.user) throw new HttpError(401, 'Please sign in again.');
+    user = data.user;
+  }
   let { data: profile } = await db().from('profiles').select('*').eq('id', user.id).maybeSingle();
   if (!profile) {
     const name = (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || null;

@@ -13,24 +13,30 @@ export const GET = handle(async (req) => {
     .order('last_opened_at', { ascending: false })
     .limit(10);
 
-  const continueList = [];
-  for (const ub of mine || []) {
-    const book = ub.books as unknown as { id: string; title: string; author: string | null; kind: string } | null;
-    if (!book) continue;
-    const { count } = await sb.from('chapters').select('*', { count: 'exact', head: true }).eq('book_id', book.id);
-    const { data: ch } = await sb.from('chapters').select('id,title').eq('book_id', book.id).eq('idx', ub.current_chapter).maybeSingle();
-    continueList.push({
-      bookId: book.id,
-      title: book.title,
-      author: book.author,
-      kind: book.kind,
-      chapterIdx: ub.current_chapter,
-      chapterId: ch?.id ?? null,
-      chapterTitle: ch?.title ?? null,
-      chapters: count || 0,
-      step: ub.current_step,
-    });
-  }
+  // Load each book's details in parallel (one round trip, not one per book).
+  const continueList = (
+    await Promise.all(
+      (mine || []).map(async (ub) => {
+        const book = ub.books as unknown as { id: string; title: string; author: string | null; kind: string } | null;
+        if (!book) return null;
+        const [{ count }, { data: ch }] = await Promise.all([
+          sb.from('chapters').select('*', { count: 'exact', head: true }).eq('book_id', book.id),
+          sb.from('chapters').select('id,title').eq('book_id', book.id).eq('idx', ub.current_chapter).maybeSingle(),
+        ]);
+        return {
+          bookId: book.id,
+          title: book.title,
+          author: book.author,
+          kind: book.kind,
+          chapterIdx: ub.current_chapter,
+          chapterId: ch?.id ?? null,
+          chapterTitle: ch?.title ?? null,
+          chapters: count || 0,
+          step: ub.current_step,
+        };
+      }),
+    )
+  ).filter((x) => x !== null);
 
   const { data: lib } = await sb.from('books').select('id,subject,title,free_until').eq('is_library', true).eq('published', true);
   const counts: Record<string, number> = {};
