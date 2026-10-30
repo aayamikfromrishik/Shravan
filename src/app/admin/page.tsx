@@ -880,6 +880,7 @@ type BMode = 'key' | 'examples' | 'complete';
 type BLevel = 'basic' | 'normal' | 'advanced';
 type BLang = 'english' | 'hindi' | 'mix';
 interface BulkItemUI {
+  book?: string;
   chapterId: string;
   idx: number;
   part: 'free' | 'full';
@@ -903,7 +904,16 @@ function Checks<T extends string>({ names, value, onChange }: { names: Record<T,
   );
 }
 
+interface PickSection {
+  id: string;
+  name: string;
+  books: { id: string; title: string; sample: boolean; picked: boolean }[];
+}
+
 function BulkTab() {
+  const [many, setMany] = useState(false);
+  const [sections, setSections] = useState<PickSection[] | null>(null);
+  const [freePart, setFreePart] = useState(true);
   const [books, setBooks] = useState<AB[] | null>(null);
   const [bookId, setBookId] = useState('');
   const [chapters, setChapters] = useState<{ idx: number; title: string }[]>([]);
@@ -926,6 +936,18 @@ function BulkTab() {
       .catch((e) => setError(e.message));
   }, []);
   useEffect(() => {
+    if (!many || sections) return;
+    api<{ sections: PickSection[] }>('/api/admin/generate/picks?per=3')
+      .then((r) => setSections(r.sections))
+      .catch((e) => setError(e.message));
+  }, [many, sections]);
+  const pickedIds = (sections || []).flatMap((s) => s.books.filter((b) => b.picked).map((b) => b.id));
+  const togglePick = (sid: string, bid: string) => {
+    setPlan(null);
+    setSections((ss) => (ss || []).map((s) => (s.id !== sid ? s : { ...s, books: s.books.map((b) => (b.id === bid ? { ...b, picked: !b.picked } : b)) })));
+  };
+
+  useEffect(() => {
     setPlan(null);
     if (!bookId) return setChapters([]);
     api<{ chapters: { idx: number; title: string }[] }>(`/api/books/${bookId}`)
@@ -941,7 +963,11 @@ function BulkTab() {
     setError(null);
     setPlan(null);
     try {
-      setPlan(await api('/api/admin/generate/plan', { body: { bookId, from, to, modes, levels, langs, audio } }));
+      setPlan(
+        await api('/api/admin/generate/plan', {
+          body: many ? { bookIds: pickedIds, from: 1, to: 1, modes, levels, langs, audio, freePart } : { bookId, from, to, modes, levels, langs, audio, freePart },
+        }),
+      );
     } catch (e) {
       setError((e as Error).message);
     }
@@ -956,7 +982,7 @@ function BulkTab() {
     const next = async (): Promise<void> => {
       while (!stop.current && i < plan.items.length) {
         const it = plan.items[i++];
-        const label = `Ch ${it.idx}${it.part === 'free' ? ' (free part)' : ''} · ${MODE_NAMES[it.mode]} · ${LEVEL_NAMES[it.level]} · ${LANG_NAMES[it.lang]}`;
+        const label = `${many && it.book ? `${it.book} · ` : ''}Ch ${it.idx}${it.part === 'free' ? ' (free part)' : ''} · ${MODE_NAMES[it.mode]} · ${LEVEL_NAMES[it.level]} · ${LANG_NAMES[it.lang]}`;
         try {
           const r = await api<{ lesson: string; audio: string }>('/api/admin/generate', { body: { item: it, audio } });
           setLog((l) => [`${r.lesson === 'failed' ? '✗' : '✓'} ${label}: lesson ${r.lesson}${audio ? `, narration ${r.audio}` : ''}`, ...l]);
@@ -978,6 +1004,44 @@ function BulkTab() {
         <p className="small" style={{ margin: 0 }}>
           Create lessons (and their narration) ahead of time, so learners never wait. Anything already made is skipped and costs nothing. Keep this page open while it runs.
         </p>
+        <div className="row" style={{ gap: 6 }}>
+          <button className={`btn small ${!many ? '' : 'ghost'}`} onClick={() => { setMany(false); setPlan(null); }}>
+            One book
+          </button>
+          <button
+            className={`btn small ${many ? '' : 'ghost'}`}
+            onClick={() => {
+              setMany(true);
+              setPlan(null);
+              setLangs(['english', 'hindi']);
+            }}
+          >
+            Trial set: chapter 1 of several books
+          </button>
+        </div>
+        {many && !sections && <Loading />}
+        {many && sections && (
+          <div className="col" style={{ gap: 8 }}>
+            <span className="small muted">
+              Chapter 1 of the ticked books ({pickedIds.length}). Three per section are ticked to start; books with ready-made samples come first. Business has only the books that have text (yours).
+            </span>
+            {sections.map((s) => (
+              <div key={s.id} className="col" style={{ gap: 4 }}>
+                <b className="small">{s.name}</b>
+                {s.books.length === 0 && <span className="tiny muted">No books with text yet.</span>}
+                <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                  {s.books.map((b) => (
+                    <button key={b.id} className={`btn small ${b.picked ? '' : 'ghost'}`} aria-pressed={b.picked} onClick={() => togglePick(s.id, b.id)}>
+                      {b.title.length > 34 ? b.title.slice(0, 33) + '…' : b.title}
+                      {b.sample ? ' ★' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {!many && (
         <label className="col" style={{ gap: 4 }}>
           <span className="small muted">Book</span>
           <select value={bookId} onChange={(e) => setBookId(e.target.value)}>
@@ -989,7 +1053,8 @@ function BulkTab() {
             ))}
           </select>
         </label>
-        {chapters.length > 0 && (
+        )}
+        {!many && chapters.length > 0 && (
           <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
             <label className="col" style={{ gap: 4 }}>
               <span className="small muted">From chapter</span>
@@ -1023,8 +1088,12 @@ function BulkTab() {
           <input type="checkbox" checked={audio} onChange={(e) => { setAudio(e.target.checked); setPlan(null); }} />
           <span>Also make the narration (uses the voices set in Narrator voice)</span>
         </label>
+        <label className="row" style={{ gap: 8 }}>
+          <input type="checkbox" checked={freePart} onChange={(e) => { setFreePart(e.target.checked); setPlan(null); }} />
+          <span>Also the free-preview version of chapter 1 (what free learners hear when chapter 1 is longer than 7 pages)</span>
+        </label>
         <div className="row" style={{ gap: 8 }}>
-          <button className="btn small ghost" onClick={makePlan} disabled={!bookId || running}>
+          <button className="btn small ghost" onClick={makePlan} disabled={(many ? !pickedIds.length : !bookId) || running}>
             Check what it will cost
           </button>
           {plan && !running && (

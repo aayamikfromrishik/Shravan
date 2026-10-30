@@ -10,6 +10,7 @@ export const LESSON_INR: Record<Lang, number> = { english: 4, hindi: 6, mix: 6 }
 export const SPOKEN_CHARS: Record<Mode, number> = { key: 1200, examples: 2000, complete: 4000 };
 
 export interface BulkItem {
+  book?: string; // title, for the progress log
   chapterId: string;
   idx: number;
   part: Part;
@@ -32,7 +33,7 @@ export async function planBulk(args: { bookId: string; from: number; to: number;
   for (const ch of chapters || []) {
     const parts: Part[] = ['full'];
     if (args.freePart && ch.idx === 1 && ch.free_text && ch.free_text.length < ch.body.length - 20) parts.push('free');
-    for (const part of parts) for (const mode of args.modes) for (const level of args.levels) for (const lang of args.langs) items.push({ chapterId: ch.id, idx: ch.idx, part, mode, level, lang });
+    for (const part of parts) for (const mode of args.modes) for (const level of args.levels) for (const lang of args.langs) items.push({ book: book.title, chapterId: ch.id, idx: ch.idx, part, mode, level, lang });
   }
 
   // What already exists costs nothing.
@@ -69,6 +70,28 @@ export async function planBulk(args: { bookId: string; from: number; to: number;
     }
   }
   return { book: { id: book.id, title: book.title }, items, total: items.length, lessonsToMake, audioToMake, estimateInr: Math.round(estimate) };
+}
+
+/** Suggested books for a trial set: up to `per` published books with text in each section (sample-lesson books first). */
+export async function trialPicks(per: number) {
+  const { SUBJECTS } = await import('./config');
+  const sb = db();
+  const { data: books } = await sb
+    .from('books')
+    .select('id,title,subject,slug')
+    .eq('is_library', true)
+    .eq('published', true)
+    .eq('status', 'ready')
+    .eq('needs_own_copy', false)
+    .order('title');
+  const { data: samples } = await sb.from('chapter_versions').select('chapter_id').eq('is_sample', true);
+  const sampleChapters = new Set((samples || []).map((s) => s.chapter_id));
+  const { data: firstChapters } = await sb.from('chapters').select('id,book_id').eq('idx', 1).in('book_id', (books || []).map((b) => b.id));
+  const hasSample = new Set((firstChapters || []).filter((c) => sampleChapters.has(c.id)).map((c) => c.book_id));
+  return SUBJECTS.map((s) => {
+    const list = (books || []).filter((b) => b.subject === s.id).sort((a, b) => Number(hasSample.has(b.id)) - Number(hasSample.has(a.id)));
+    return { id: s.id, name: s.name, books: list.map((b, i) => ({ id: b.id, title: b.title, sample: hasSample.has(b.id), picked: i < per })) };
+  });
 }
 
 /** Make (or confirm) one lesson version and, if asked, its narration. */
