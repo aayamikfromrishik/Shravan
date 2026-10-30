@@ -543,6 +543,62 @@
    "subject": "mind",
    "url": "https://archive.org/download/masterkeysystem1919haan/masterkeysystem1919haan_djvu.txt",
    "note": "Scanned text (OCR); check the chapters after import."
+  },
+  {
+   "slug": "clear-atomic-habits",
+   "title": "Atomic Habits",
+   "author": "James Clear",
+   "subject": "habits",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "newport-deep-work",
+   "title": "Deep Work",
+   "author": "Cal Newport",
+   "subject": "habits",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "gawande-checklist-manifesto",
+   "title": "The Checklist Manifesto",
+   "author": "Atul Gawande",
+   "subject": "work",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "gerber-e-myth-revisited",
+   "title": "The E-Myth Revisited",
+   "author": "Michael E. Gerber",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "wickman-traction",
+   "title": "Traction: Get a Grip on Your Business",
+   "author": "Gino Wickman",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "norman-design-of-everyday-things",
+   "title": "The Design of Everyday Things",
+   "author": "Don Norman",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "fitzpatrick-mom-test",
+   "title": "The Mom Test",
+   "author": "Rob Fitzpatrick",
+   "subject": "business",
+   "needsOwnCopy": true
+  },
+  {
+   "slug": "reinholdt-architect-entrepreneur-2",
+   "title": "Architect + Entrepreneur: Volume 2",
+   "author": "Eric W. Reinholdt",
+   "subject": "business",
+   "needsOwnCopy": true
   }
  ],
  "ownBooks": [
