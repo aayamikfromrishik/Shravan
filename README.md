@@ -66,3 +66,11 @@ npm run build                # production build
 | `data/samples/*.json` | Ready-made sample lessons (built by `scripts/build_samples.py`) |
 
 Copyrighted book text (including the author's own PDF) is never committed; it lives only in Supabase.
+
+## Licence
+
+- **Code:** [GNU AGPL v3.0](LICENSE). You may use, study and change it. If you run a modified version for other people (for example as a website or app), you must share your source code under the same licence.
+- **Names and logos:** SHRAVAN, AAYAMIK, their logos and the tagline are not covered by the code licence. See [TRADEMARKS.md](TRADEMARKS.md).
+- **Book content:** see [data/CONTENT-LICENCE.md](data/CONTENT-LICENCE.md). The sample lessons of *The 100 Decisions Before the First Brick* are all rights reserved.
+
+Copyright (C) 2026 AAYAMIK.
