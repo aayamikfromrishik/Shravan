@@ -80,13 +80,15 @@ export default function SetupPage({ params }: { params: Promise<{ id: string }> 
             ))}
           </fieldset>
           <div className="col" style={{ gap: 8 }}>
-            <span className="label">English level</span>
-            <Seg label="English level" value={level} onChange={setLevel} options={[{ value: 'basic', label: 'Basic' }, { value: 'normal', label: 'Normal' }, { value: 'advanced', label: 'Advanced' }]} />
-          </div>
-          <div className="col" style={{ gap: 8 }}>
             <span className="label">Language</span>
             <Seg label="Language" value={lang} onChange={setLang} options={[{ value: 'english', label: 'English' }, { value: 'hindi', label: 'हिन्दी' }, { value: 'mix', label: 'Mix' }]} />
           </div>
+          {lang === 'english' && (
+            <div className="col" style={{ gap: 8 }}>
+              <span className="label">English level</span>
+              <Seg label="English level" value={level} onChange={setLevel} options={[{ value: 'basic', label: 'Basic' }, { value: 'normal', label: 'Normal' }, { value: 'advanced', label: 'Advanced' }]} />
+            </div>
+          )}
           <div className="grow" />
           <p className="center muted small" style={{ margin: 0 }}>
             You can change any of these during the book.
