@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api, daysLeft, fmtDate } from '@/lib/client';
 import { useApp } from '@/components/AppProvider';
-import { BottomNav, ErrorNote, Icon, Loading } from '@/components/ui';
+import { BottomNav, ErrorNote, Icon, Loading, Emblem } from '@/components/ui';
 
 interface Home {
   journey: { title: string; count: number; next: { id: string; title: string } | null } | null;
@@ -35,7 +35,8 @@ export default function HomePage() {
     <main className="page">
       <div className="row between">
         <div className="col" style={{ gap: 0 }}>
-          <span className="row" style={{ gap: 6, alignItems: 'baseline' }}>
+          <span className="row" style={{ gap: 6, alignItems: 'center' }}>
+            <Emblem size={22} />
             <span className="wordmark">SHRAVAN</span>
             <span className="tiny muted">by AAYAMIK</span>
           </span>

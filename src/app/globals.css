@@ -11,6 +11,8 @@
   --primary-ink: #ffffff;
   --accent: #e39b3b;
   --accent-ink: #1b2340;
+  --logo-arc: #1b2340;
+  --logo-dot: #e39b3b;
   --hero: #1b2340;
   --hero-ink: #ffffff;
   --hero-muted: #c9ced8;
@@ -38,6 +40,8 @@
   --primary-ink: #08272c;
   --accent: #e6b954;
   --accent-ink: #08272c;
+  --logo-arc: #2fbf8f;
+  --logo-dot: #e6b954;
   --hero: #0f3a41;
   --hero-ink: #f2eee3;
   --hero-muted: #a9c6c6;
@@ -179,13 +183,13 @@ h3 {
   text-align: center;
 }
 .wordmark {
-  font-weight: 700;
-  letter-spacing: 0.26em;
+  /* Logo wordmark: Marcellus, tracked 0.28em (both views) */
+  font-family: 'Marcellus', serif;
+  font-weight: 400;
+  letter-spacing: 0.28em;
   font-size: 15px;
 }
 [data-view='peacock'] .wordmark {
-  font-family: 'Marcellus', serif;
-  font-weight: 400;
   color: var(--accent);
 }
 
