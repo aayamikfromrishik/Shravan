@@ -960,13 +960,15 @@ function BulkTab() {
       .catch((e) => setError(e.message));
   }, [bookId]);
 
+  // Levels only matter for English; without English (or with none ticked) everything is made at Normal.
+  const useLevels: BLevel[] = langs.includes('english') && levels.length ? levels : ['normal'];
   const makePlan = async () => {
     setError(null);
     setPlan(null);
     try {
       setPlan(
         await api('/api/admin/generate/plan', {
-          body: many ? { bookIds: pickedIds, from: 1, to: upTo, modes, levels, langs, audio, freePart } : { bookId, from, to, modes, levels, langs, audio, freePart },
+          body: many ? { bookIds: pickedIds, from: 1, to: upTo, modes, levels: useLevels, langs, audio, freePart } : { bookId, from, to, modes, levels: useLevels, langs, audio, freePart },
         }),
       );
     } catch (e) {
@@ -1092,11 +1094,17 @@ function BulkTab() {
         )}
         <span className="small muted">Modes</span>
         <Checks names={MODE_NAMES} value={modes} onChange={(v) => { setModes(v); setPlan(null); }} />
-        <span className="small muted">English levels</span>
-        <Checks names={LEVEL_NAMES} value={levels} onChange={(v) => { setLevels(v); setPlan(null); }} />
-        <span className="tiny muted">Only English uses these. Hindi and Mix are always made at Normal.</span>
         <span className="small muted">Languages</span>
         <Checks names={LANG_NAMES} value={langs} onChange={(v) => { setLangs(v); setPlan(null); }} />
+        {langs.includes('english') ? (
+          <>
+            <span className="small muted">Levels (English only)</span>
+            <Checks names={LEVEL_NAMES} value={levels} onChange={(v) => { setLevels(v); setPlan(null); }} />
+            {langs.length > 1 && <span className="tiny muted">Hindi and Mix have one level and are made once, whatever you tick here.</span>}
+          </>
+        ) : (
+          <span className="tiny muted">Hindi and Mix have one level, so there is nothing to choose.</span>
+        )}
         <label className="row" style={{ gap: 8 }}>
           <input type="checkbox" checked={audio} onChange={(e) => { setAudio(e.target.checked); setPlan(null); }} />
           <span>Also make the narration (uses the voices set in Narrator voice)</span>
@@ -1122,6 +1130,11 @@ function BulkTab() {
         </div>
         {plan && (
           <p className="small" style={{ margin: 0 }}>
+            {(['english', 'hindi', 'mix'] as BLang[])
+              .filter((l) => plan.items.some((it) => it.lang === l))
+              .map((l) => `${LANG_NAMES[l]}: ${[...new Set(plan.items.filter((it) => it.lang === l).map((it) => LEVEL_NAMES[it.level]))].join(', ')}`)
+              .join(' · ')}
+            <br />
             {plan.total} versions: {plan.lessonsToMake} lessons to write{audio ? ` and ${plan.audioToMake} narrations to record` : ''}. Estimated cost: <b>about ₹{plan.estimateInr}</b> (a rough guide; actual cost shows in Usage &amp; costs). Time: about {Math.max(1, Math.round(((plan.lessonsToMake * 40 + plan.audioToMake * 20) / 2) / 60))} min.
           </p>
         )}
