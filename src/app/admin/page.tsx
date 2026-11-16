@@ -1094,6 +1094,7 @@ function BulkTab() {
         <Checks names={MODE_NAMES} value={modes} onChange={(v) => { setModes(v); setPlan(null); }} />
         <span className="small muted">English levels</span>
         <Checks names={LEVEL_NAMES} value={levels} onChange={(v) => { setLevels(v); setPlan(null); }} />
+        <span className="tiny muted">Only English uses these. Hindi and Mix are always made at Normal.</span>
         <span className="small muted">Languages</span>
         <Checks names={LANG_NAMES} value={langs} onChange={(v) => { setLangs(v); setPlan(null); }} />
         <label className="row" style={{ gap: 8 }}>
