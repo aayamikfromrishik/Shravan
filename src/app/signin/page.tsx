@@ -72,7 +72,7 @@ export default function SignIn() {
       <div className="col" style={{ alignItems: 'center', gap: 20, flex: 1, justifyContent: 'center' }}>
         <Emblem size={150} />
         <div className="col" style={{ alignItems: 'center', gap: 4 }}>
-          <h1 style={{ fontSize: 40, letterSpacing: '0.28em', paddingLeft: '0.28em' }}>SHRAVAN</h1>
+          <h1 style={{ fontSize: 40, letterSpacing: '0.28em', paddingLeft: '0.28em', fontFamily: "'Marcellus', serif", fontWeight: 400 }}>SHRAVAN</h1>
           <p style={{ margin: 0, color: 'var(--label)', fontWeight: 600, letterSpacing: '0.06em' }}>Listen. Reflect. Apply.</p>
           <p className="muted small" style={{ margin: '4px 0 0', letterSpacing: '0.14em', fontWeight: 600 }}>
             by AAYAMIK
