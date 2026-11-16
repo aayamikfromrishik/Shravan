@@ -98,6 +98,7 @@ export default function Account() {
           Default English level
         </span>
         <Seg label="Default English level" value={p.default_level} onChange={(v) => setDefault('default_level', v)} options={[{ value: 'basic', label: 'Basic' }, { value: 'normal', label: 'Normal' }, { value: 'advanced', label: 'Advanced' }]} />
+        <span className="tiny muted">Used for English lessons. Hindi and Mix lessons have one level.</span>
       </div>
 
       <div className="card col">
