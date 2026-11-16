@@ -1,6 +1,6 @@
 // Shared loading for the learning routes.
 import { canSeeBook, chapterAccess, db, getBook, HttpError, type BookRow, type Caller } from './server';
-import type { Lang, Level, Mode, Part } from './config';
+import { levelFor, type Lang, type Level, type Mode, type Part } from './config';
 
 export interface ChapterRow {
   id: string;
@@ -33,9 +33,10 @@ export async function settingsFor(c: Caller, book: BookRow, q?: URLSearchParams)
     const v = q?.get(name) as T | null;
     return v && allowed.includes(v) ? v : fallback;
   };
+  const lang = pick('lang', ['english', 'hindi', 'mix'] as const, (ub?.lang || c.profile.default_language || 'mix') as Lang);
   return {
     mode: pick('mode', ['key', 'examples', 'complete'] as const, (ub?.mode || c.profile.default_mode || 'examples') as Mode),
-    level: pick('level', ['basic', 'normal', 'advanced'] as const, (ub?.level || c.profile.default_level || 'normal') as Level),
-    lang: pick('lang', ['english', 'hindi', 'mix'] as const, (ub?.lang || c.profile.default_language || 'mix') as Lang),
+    level: levelFor(lang, pick('level', ['basic', 'normal', 'advanced'] as const, (ub?.level || c.profile.default_level || 'normal') as Level)),
+    lang,
   };
 }

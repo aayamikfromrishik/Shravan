@@ -2,7 +2,7 @@
 import { db, getBook } from './server';
 import { getOrCreateVersion } from './versions';
 import { getOrCreateAudio, getVoiceSettings, INR_PER_10K_CHARS, pickVoice } from './voice';
-import type { Lang, Level, Mode, Part } from './config';
+import { levelFor, type Lang, type Level, type Mode, type Part } from './config';
 import type { Lesson } from './lesson';
 
 // Rough averages (₹) for estimates: Claude writing one lesson version, and the spoken length of each mode.
@@ -30,10 +30,21 @@ export async function planBulk(args: { bookId: string; from: number; to: number;
     .lte('idx', args.to)
     .order('idx');
   const items: BulkItem[] = [];
+  const seen = new Set<string>();
   for (const ch of chapters || []) {
     const parts: Part[] = ['full'];
     if (args.freePart && ch.idx === 1 && ch.free_text && ch.free_text.length < ch.body.length - 20) parts.push('free');
-    for (const part of parts) for (const mode of args.modes) for (const level of args.levels) for (const lang of args.langs) items.push({ book: book.title, chapterId: ch.id, idx: ch.idx, part, mode, level, lang });
+    for (const part of parts)
+      for (const mode of args.modes)
+        for (const lang of args.langs)
+          for (const picked of args.levels) {
+            // Hindi and Mix have one level (Normal), so ticking several English levels adds them only once.
+            const level = levelFor(lang, picked);
+            const k = `${ch.id}|${part}|${mode}|${level}|${lang}`;
+            if (seen.has(k)) continue;
+            seen.add(k);
+            items.push({ book: book.title, chapterId: ch.id, idx: ch.idx, part, mode, level, lang });
+          }
   }
 
   // What already exists costs nothing.

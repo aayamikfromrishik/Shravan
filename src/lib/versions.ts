@@ -1,7 +1,7 @@
 // Get a saved lesson, or write it once (the first learner to ask pays the AI cost; everyone after reuses it).
 import { db, logUsage, type BookRow } from './server';
 import { generateLesson } from './ai';
-import type { Lang, Level, Mode, Part } from './config';
+import { levelFor, type Lang, type Level, type Mode, type Part } from './config';
 import type { Lesson } from './lesson';
 
 export interface VersionResult {
@@ -22,6 +22,7 @@ export async function getOrCreateVersion(args: {
   level: Level;
   lang: Lang;
 }): Promise<VersionResult> {
+  args = { ...args, level: levelFor(args.lang, args.level) };
   const key = { chapter_id: args.chapter.id, part: args.part, mode: args.mode, level: args.level, lang: args.lang };
   const { data: found } = await db().from('chapter_versions').select('*').match(key).maybeSingle();
   if (found?.status === 'ready') {

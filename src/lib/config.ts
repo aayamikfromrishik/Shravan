@@ -41,6 +41,9 @@ export const MODE_LABEL: Record<Mode, string> = {
   examples: 'Key Ideas + Essential Examples',
   complete: 'Complete Learning Experience',
 };
+/** Only English lessons come in three levels; Hindi and Mix always use Normal. */
+export const levelFor = (lang: Lang, level: Level): Level => (lang === 'english' ? level : 'normal');
+
 export const LEVEL_LABEL: Record<Level, string> = { basic: 'Basic', normal: 'Normal', advanced: 'Advanced' };
 export const LANG_LABEL: Record<Lang, string> = { english: 'English', hindi: 'हिन्दी', mix: 'Mix' };
 
