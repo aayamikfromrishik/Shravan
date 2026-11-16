@@ -30,6 +30,9 @@ export const GET = handle(async (req, ctx) => {
   const part = partFor(access, chapter);
   const v = await getOrCreateVersion({ book, chapter, part, ...settings });
 
+  // Drive mode prepares the next chapter in the background: make the lesson, but don't move the bookmark.
+  if (url.searchParams.get('prefetch') === '1') return Response.json({ status: v.status, versionId: v.versionId || null });
+
   // Remember where the learner is.
   await db()
     .from('user_books')

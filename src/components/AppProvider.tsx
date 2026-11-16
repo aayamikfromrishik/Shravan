@@ -15,6 +15,7 @@ export interface Me {
     default_level: 'basic' | 'normal' | 'advanced';
     default_mode: 'key' | 'examples' | 'complete';
     plan: 'free' | 'subscriber';
+    drive_mode?: boolean;
   };
   isAdmin: boolean;
   isSubscriber: boolean;
@@ -22,6 +23,7 @@ export interface Me {
   unread: number;
   paymentsEnabled: boolean;
   aiVoice?: boolean;
+  pendingQuestions?: number;
 }
 
 interface Ctx {
@@ -30,8 +32,9 @@ interface Ctx {
   ready: boolean;
   refresh: () => Promise<void>;
   setView: (v: 'basic' | 'peacock') => void;
+  setDrive: (on: boolean) => void;
 }
-const AppCtx = createContext<Ctx>({ session: null, me: null, ready: false, refresh: async () => {}, setView: () => {} });
+const AppCtx = createContext<Ctx>({ session: null, me: null, ready: false, refresh: async () => {}, setView: () => {}, setDrive: () => {} });
 export const useApp = () => useContext(AppCtx);
 
 const PUBLIC = ['/signin', '/downloads', '/privacy', '/terms'];
@@ -99,5 +102,10 @@ export default function AppProvider({ children }: { children: React.ReactNode })
     [],
   );
 
-  return <AppCtx.Provider value={{ session, me, ready, refresh, setView }}>{children}</AppCtx.Provider>;
+  const setDrive = useCallback((on: boolean) => {
+    setMe((m) => (m ? { ...m, profile: { ...m.profile, drive_mode: on } } : m));
+    api('/api/me', { method: 'PATCH', body: { drive_mode: on } }).catch(() => {});
+  }, []);
+
+  return <AppCtx.Provider value={{ session, me, ready, refresh, setView, setDrive }}>{children}</AppCtx.Provider>;
 }

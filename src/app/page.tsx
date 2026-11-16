@@ -99,6 +99,18 @@ export default function HomePage() {
         </div>
       )}
 
+      {(me?.pendingQuestions || 0) > 0 && (
+        <Link href="/pending" className="card row between" style={{ textDecoration: 'none', color: 'var(--ink)', gap: 8 }}>
+          <span className="col" style={{ gap: 2 }}>
+            <b>Questions waiting</b>
+            <span className="small muted">
+              {me?.pendingQuestions} chapter{me?.pendingQuestions === 1 ? '' : 's'} from Drive mode. Answer them when you are free.
+            </span>
+          </span>
+          <span className="small">Open</span>
+        </Link>
+      )}
+
       {data &&
         (data.journey ? (
           <Link href="/journey" className="card col" style={{ textDecoration: 'none', color: 'var(--ink)', gap: 4 }}>

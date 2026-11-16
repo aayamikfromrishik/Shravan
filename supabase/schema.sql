@@ -296,3 +296,8 @@ create table if not exists journeys (
   updated_at timestamptz not null default now()
 );
 alter table journeys enable row level security;
+
+-- ---------- Update 6: Drive mode (also in supabase/migrations/006_drive_mode.sql) ----------
+alter table profiles add column if not exists drive_mode boolean not null default false;
+alter table progress add column if not exists questions_pending boolean not null default false;
+create index if not exists progress_pending_idx on progress(user_id) where questions_pending;

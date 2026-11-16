@@ -11,7 +11,7 @@ export const POST = handle(async (req, ctx) => {
   const partial = access === 'free_part' && !!chapter.free_text && chapter.free_text.length < chapter.body.length - 20;
   await db()
     .from('progress')
-    .upsert({ user_id: c.user.id, chapter_id: chapter.id, completed: !partial, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'user_id,chapter_id' });
+    .upsert({ user_id: c.user.id, chapter_id: chapter.id, completed: !partial, questions_pending: false, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'user_id,chapter_id' });
   const { data: next } = await db().from('chapters').select('id,idx').eq('book_id', book.id).eq('idx', chapter.idx + 1).maybeSingle();
   await db()
     .from('user_books')

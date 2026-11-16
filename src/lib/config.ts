@@ -9,6 +9,7 @@ export const LIMITS = {
   askPerChapter: 5,             // "Ask about this chapter" (subscribers)
   readAlongFollowUps: 5,        // Read-along follow-ups per chapter
   maxUploadMB: 30,              // matches the 'uploads' storage bucket limit
+  drivePendingMax: 10,          // Drive mode: chapters that may wait for their questions
   maxPages: 1000,               // long novels (e.g. 700-page paperbacks) fit
   maxWords: 400_000,            // most single books fit; giant multi-volume works should be split
   minWordsPerPageForText: 25,   // below this a PDF is treated as a scan

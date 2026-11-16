@@ -10,7 +10,9 @@ export const GET = handle(async (req) => {
     .select('*', { count: 'exact', head: true })
     .or(`user_id.is.null,user_id.eq.${c.user.id}`)
     .gt('created_at', c.profile.notifications_seen_at);
+  const { count: pending } = await db().from('progress').select('*', { count: 'exact', head: true }).eq('user_id', c.user.id).eq('questions_pending', true);
   return Response.json({
+    pendingQuestions: pending || 0,
     profile: c.profile,
     isAdmin: c.isAdmin,
     isSubscriber: isSubscriber(c.profile),
@@ -23,15 +25,16 @@ export const GET = handle(async (req) => {
 
 export const PATCH = handle(async (req) => {
   const c = await getCaller(req);
-  const b = await body<Record<string, string>>(req);
+  const b = await body<Record<string, string | boolean>>(req);
   const allowed: Record<string, string[]> = {
     view: ['basic', 'peacock'],
     default_language: ['english', 'hindi', 'mix'],
     default_level: ['basic', 'normal', 'advanced'],
     default_mode: ['key', 'examples', 'complete'],
   };
-  const patch: Record<string, string> = {};
-  for (const [k, v] of Object.entries(b)) if (allowed[k]?.includes(v)) patch[k] = v;
+  const patch: Record<string, string | boolean> = {};
+  for (const [k, v] of Object.entries(b)) if (typeof v === 'string' && allowed[k]?.includes(v)) patch[k] = v;
+  if (typeof b.drive_mode === 'boolean') patch.drive_mode = b.drive_mode;
   if (typeof b.name === 'string') patch.name = b.name.slice(0, 80);
   if (b.notifications_seen === 'now') patch.notifications_seen_at = new Date().toISOString();
   if (Object.keys(patch).length) await db().from('profiles').update(patch).eq('id', c.user.id);

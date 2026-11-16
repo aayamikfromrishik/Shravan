@@ -8,6 +8,37 @@ import { ErrorNote, Loading, Steps, TopBar } from '@/components/ui';
 import Player from '@/components/Player';
 import SaveOffline from '@/components/SaveOffline';
 import MicButton from '@/components/MicButton';
+import { useApp } from '@/components/AppProvider';
+
+const LANGS: [Lang, string][] = [
+  ['english', 'English'],
+  ['hindi', 'हिन्दी'],
+  ['mix', 'Mix'],
+];
+
+/** Change the lesson language right where you are (used on the question pages). */
+function LangSwitch({ value, onChange }: { value: Lang; onChange: (l: Lang) => void }) {
+  return (
+    <div className="row" style={{ gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+      <span className="tiny muted">Language:</span>
+      {LANGS.map(([l, name]) => (
+        <button key={l} className={`btn small ${value === l ? '' : 'ghost'}`} aria-pressed={value === l} onClick={() => value !== l && onChange(l)}>
+          {name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** A short spoken notice (Drive mode: the learner may not be looking at the screen). */
+function say(text: string, lang: Lang) {
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang === 'english' ? 'en-IN' : 'hi-IN';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  } catch {}
+}
 
 type Lang = 'english' | 'hindi' | 'mix';
 interface Action {
@@ -110,11 +141,30 @@ export default function LearnPage({ params }: { params: Promise<{ chapterId: str
   const [step, setStep] = useState<'listen' | 'reflect' | 'apply' | 'done'>('listen');
   const [showText, setShowText] = useState(true);
   const confirmRef = useRef(false);
+  const { me, setDrive } = useApp();
+  const drive = !!me?.profile.drive_mode;
+  const [langOverride, setLangOverride] = useState<Lang | null>(null);
+  const [autoplay, setAutoplay] = useState(false);
+  const [fromPending, setFromPending] = useState(false);
+  const [driveNote, setDriveNote] = useState<string | null>(null);
+
+  // Opened from "Questions waiting" (?step=reflect) or by Drive mode (?autoplay=1).
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('step') === 'reflect') {
+      setStep('reflect');
+      setFromPending(true);
+    }
+    if (q.get('autoplay') === '1') setAutoplay(true);
+  }, []);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const r = await api<Omit<LearnResp, 'status'> & { status: string }>(`/api/learn/${chapterId}${confirmRef.current ? '?confirm=1' : ''}`);
+      const qs = new URLSearchParams();
+      if (confirmRef.current) qs.set('confirm', '1');
+      if (langOverride) qs.set('lang', langOverride);
+      const r = await api<Omit<LearnResp, 'status'> & { status: string }>(`/api/learn/${chapterId}${qs.size ? `?${qs}` : ''}`);
       if (r.status === 'generating') {
         setState('generating');
         return;
@@ -130,7 +180,35 @@ export default function LearnPage({ params }: { params: Promise<{ chapterId: str
       } else if (err.status === 500 && (err.data as { status?: string })?.status === 'failed') setState('failed');
       else setError(err.message);
     }
-  }, [chapterId]);
+  }, [chapterId, langOverride]);
+
+  const changeLang = (l: Lang) => {
+    setLangOverride(l);
+    setState('loading');
+  };
+
+  // Drive mode: when a chapter has been heard to the end, save its questions for later and go straight on.
+  const onChapterEnded = useCallback(async () => {
+    if (!drive || !d) return;
+    try {
+      const r = await api<{ next: { id: string } | null; finishedBook: boolean; pending: number }>(`/api/learn/${chapterId}/drive-skip`, { body: {} });
+      if (r.next) {
+        router.push(`/learn/${r.next.id}?autoplay=1`);
+      } else {
+        const t = `You have finished the book. ${r.pending} chapter${r.pending === 1 ? '' : 's'} have questions waiting for you.`;
+        setDriveNote(t);
+        say(t, d.settings.lang);
+      }
+    } catch (e) {
+      const err = e as ApiError;
+      if (err.status === 409) {
+        const max = (err.data as { max?: number })?.max || 10;
+        const t = `Drive mode is paused. ${max} chapters are waiting for their questions. Please answer some of them before you continue.`;
+        setDriveNote(t);
+        say(t, d.settings.lang);
+      } else setDriveNote(err.message);
+    }
+  }, [drive, d, chapterId, router]);
 
   useEffect(() => {
     load();
@@ -226,6 +304,7 @@ export default function LearnPage({ params }: { params: Promise<{ chapterId: str
 
   const { lesson, settings } = d;
   const spiritual = d.book.subject === 'spiritual';
+  const pendingLeft = Math.max(0, (me?.pendingQuestions || 0) - 1);
 
   return (
     <main className="page nonav" style={{ paddingBottom: step === 'listen' ? 24 : undefined }}>
@@ -242,11 +321,35 @@ export default function LearnPage({ params }: { params: Promise<{ chapterId: str
       </div>
 
       {step === 'listen' && (
-        <ListenView d={d} showText={showText} setShowText={setShowText} sentences={sentences} savePos={savePos} onNext={() => { setStep('reflect'); api(`/api/learn/${chapterId}/progress`, { body: { listened: true, step: 'reflect' } }).catch(() => {}); }} />
+        <>
+          <DriveBar drive={drive} setDrive={setDrive} pending={me?.pendingQuestions || 0} />
+          {driveNote && (
+            <div className="note warn col" style={{ gap: 6 }}>
+              <span>{driveNote}</span>
+              <Link href="/pending">Answer the waiting questions</Link>
+            </div>
+          )}
+          <ListenView
+            d={d}
+            showText={showText}
+            setShowText={setShowText}
+            sentences={sentences}
+            savePos={savePos}
+            drive={drive}
+            autoStart={autoplay}
+            onEnded={onChapterEnded}
+            onNext={() => {
+              setStep('reflect');
+              api(`/api/learn/${chapterId}/progress`, { body: { listened: true, step: 'reflect' } }).catch(() => {});
+            }}
+          />
+        </>
       )}
-      {step === 'reflect' && <ReflectView d={d} spiritual={spiritual} onBack={() => setStep('listen')} onDone={() => setStep('apply')} />}
+      {(step === 'reflect' || step === 'apply') && <LangSwitch value={settings.lang} onChange={changeLang} />}
+      {step === 'reflect' && <ReflectView key={settings.lang} d={d} spiritual={spiritual} onBack={() => setStep('listen')} onDone={() => setStep('apply')} />}
       {step === 'apply' && (
         <ApplyView
+          key={settings.lang}
           d={d}
           spiritual={spiritual}
           onDone={async () => {
@@ -259,6 +362,11 @@ export default function LearnPage({ params }: { params: Promise<{ chapterId: str
       {step === 'done' && (
         <div className="col">
           <div className="note good">Chapter {d.chapter.idx} complete. Your reflections and actions are saved.</div>
+          {fromPending && (
+            <Link href="/pending" className="btn">
+              {pendingLeft > 0 ? `Next waiting questions (${pendingLeft} left)` : 'Back to waiting questions'}
+            </Link>
+          )}
           {d.next ? (
             <Link href={`/learn/${d.next.id}`} className="btn">
               Go to chapter {d.next.idx}
@@ -277,7 +385,74 @@ export default function LearnPage({ params }: { params: Promise<{ chapterId: str
   );
 }
 
-function ListenView({ d, showText, setShowText, sentences, savePos, onNext }: { d: LearnResp; showText: boolean; setShowText: (b: boolean) => void; sentences: string[]; savePos: (i: number) => void; onNext: () => void }) {
+/** Drive mode on/off, right on the lesson. */
+function DriveBar({ drive, setDrive, pending }: { drive: boolean; setDrive: (b: boolean) => void; pending: number }) {
+  const [warn, setWarn] = useState(false);
+  return (
+    <div className="col" style={{ gap: 6 }}>
+      <div className="row between" style={{ gap: 8 }}>
+        <span className="small">
+          <b>Drive mode</b> {drive ? 'is on: chapters play one after another; questions wait for later.' : ''}
+          {drive && pending > 0 ? ` (${pending} waiting)` : ''}
+        </span>
+        <button
+          className={`btn small ${drive ? '' : 'ghost'}`}
+          aria-pressed={drive}
+          onClick={() => {
+            if (!drive) setWarn(true);
+            setDrive(!drive);
+          }}
+        >
+          {drive ? 'On' : 'Off'}
+        </button>
+      </div>
+      {warn && drive && (
+        <div className="note">
+          Set everything up and press Play before you start driving. Don&apos;t look at or touch the screen while driving. Use your car or headphone controls to pause.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ListenView({
+  d,
+  showText,
+  setShowText,
+  sentences,
+  savePos,
+  onNext,
+  drive,
+  autoStart,
+  onEnded,
+}: {
+  d: LearnResp;
+  showText: boolean;
+  setShowText: (b: boolean) => void;
+  sentences: string[];
+  savePos: (i: number) => void;
+  onNext: () => void;
+  drive: boolean;
+  autoStart: boolean;
+  onEnded: () => void;
+}) {
+  const { me } = useApp();
+  const meta = useMemo(() => ({ title: `${d.chapter.idx}. ${d.lesson.title || d.chapter.title}`, book: d.book.title }), [d]);
+
+  // Drive mode: get the next chapter (and its narration) ready while this one plays.
+  useEffect(() => {
+    if (!drive || !d.next) return;
+    const nextId = d.next.id;
+    const t = setTimeout(() => {
+      api<{ status: string; versionId: string | null }>(`/api/learn/${nextId}?prefetch=1`)
+        .then((r) => {
+          if (r.status === 'ready' && r.versionId && me?.aiVoice) api(`/api/audio/${r.versionId}`, { method: 'POST' }).catch(() => {});
+        })
+        .catch(() => {});
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [drive, d, me?.aiVoice]);
+
   const { lesson } = d;
   const [asks, setAsks] = useState<{ q: string; a: string; found: boolean }[]>([]);
   const [q, setQ] = useState('');
@@ -452,7 +627,16 @@ function ListenView({ d, showText, setShowText, sentences, savePos, onNext }: { 
       <button className="btn accent" onClick={onNext}>
         Next: Reflect
       </button>
-      <Player sentences={sentences} lang={d.settings.lang} start={d.progress?.speech_position || 0} onPosition={savePos} versionId={d.versionId} />
+      <Player
+        sentences={sentences}
+        lang={d.settings.lang}
+        start={autoStart ? 0 : d.progress?.speech_position || 0}
+        onPosition={savePos}
+        versionId={d.versionId}
+        autoStart={autoStart}
+        onEnded={drive ? onEnded : undefined}
+        meta={meta}
+      />
     </>
   );
 }

@@ -23,7 +23,7 @@ function Preview({ view }: { view: 'basic' | 'peacock' }) {
 }
 
 export default function Account() {
-  const { me, setView, refresh } = useApp();
+  const { me, setView, setDrive, refresh } = useApp();
   const router = useRouter();
   const [pushState, setPushState] = useState<string | null>(null);
   if (!me) return <main className="page"><Loading /><BottomNav /></main>;
@@ -55,6 +55,18 @@ export default function Account() {
         <span>Notices</span>
         {me.unread > 0 ? <span className="chip gold">{me.unread} new</span> : <span className="small muted">None new</span>}
       </Link>
+
+      <div className="card col" style={{ gap: 6 }}>
+        <div className="row between">
+          <b>Drive mode</b>
+          <button className={`btn small ${me.profile.drive_mode ? '' : 'ghost'}`} aria-pressed={!!me.profile.drive_mode} onClick={() => setDrive(!me.profile.drive_mode)}>
+            {me.profile.drive_mode ? 'On' : 'Off'}
+          </button>
+        </div>
+        <span className="small muted">
+          Chapters play one after another without stopping for questions. The questions wait for later (up to 10 chapters) under Home → Questions waiting. Set it up before you drive, and don&apos;t touch the screen while driving.
+        </span>
+      </div>
 
       <Link href="/downloads" className="card row between" style={{ textDecoration: 'none', color: 'var(--ink)' }}>
         <span>Downloads (offline listening)</span>

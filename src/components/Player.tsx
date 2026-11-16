@@ -17,6 +17,8 @@ interface Engine_ {
   index: number;
   playing: boolean;
   onChange: (index: number, playing: boolean) => void;
+  /** Called when the lesson has been read to the end (not when paused). */
+  onEnd: () => void;
   play(): void;
   pause(): void;
   jump(delta: number): void;
@@ -45,6 +47,7 @@ class PhoneSpeaker implements Engine_ {
   index = 0;
   playing = false;
   onChange: (index: number, playing: boolean) => void = () => {};
+  onEnd: () => void = () => {};
 
   speak(i: number) {
     const synth = window.speechSynthesis;
@@ -52,6 +55,7 @@ class PhoneSpeaker implements Engine_ {
       this.playing = false;
       this.index = 0;
       this.onChange(this.sentences.length - 1, false);
+      this.onEnd();
       return;
     }
     this.index = i;
@@ -110,8 +114,13 @@ interface Part {
   end: number;
 }
 
+// One audio element for the whole visit: phones that only allow sound after a tap keep allowing it
+// when Drive mode moves on to the next chapter.
+let sharedAudio: HTMLAudioElement | null = null;
+const getSharedAudio = () => (sharedAudio ??= new Audio());
+
 class NarratorSpeaker implements Engine_ {
-  audio = new Audio();
+  audio = getSharedAudio();
   parts: Part[] = [];
   sentences: string[] = [];
   index = 0;
@@ -120,11 +129,15 @@ class NarratorSpeaker implements Engine_ {
   partIdx = -1;
   onChange: (index: number, playing: boolean) => void = () => {};
   onBlocked: () => void = () => {};
+  onEnd: () => void = () => {};
+  private onTime = () => this.track();
+  private onEnded = () => this.next();
 
   constructor() {
+    this.audio.pause();
     this.audio.preload = 'auto';
-    this.audio.addEventListener('timeupdate', () => this.track());
-    this.audio.addEventListener('ended', () => this.next());
+    this.audio.addEventListener('timeupdate', this.onTime);
+    this.audio.addEventListener('ended', this.onEnded);
   }
   // Where a sentence sits inside its part, as a share of the part's length (by characters).
   private share(p: Part, i: number) {
@@ -162,6 +175,7 @@ class NarratorSpeaker implements Engine_ {
       this.index = 0;
       this.partIdx = -1;
       this.onChange(this.sentences.length - 1, false);
+      this.onEnd();
     }
   }
   private load(i: number, autoplay: boolean) {
@@ -208,9 +222,9 @@ class NarratorSpeaker implements Engine_ {
   }
   destroy() {
     this.playing = false;
+    this.audio.removeEventListener('timeupdate', this.onTime);
+    this.audio.removeEventListener('ended', this.onEnded);
     this.audio.pause();
-    this.audio.removeAttribute('src');
-    this.audio.load();
   }
 }
 
@@ -222,6 +236,9 @@ export default function Player({
   onPosition,
   versionId,
   offlineParts,
+  autoStart,
+  onEnded,
+  meta,
 }: {
   sentences: string[];
   lang: Lang;
@@ -230,6 +247,12 @@ export default function Player({
   versionId?: string;
   /** Saved audio (Downloads page): play these, no internet needed. */
   offlineParts?: Part[];
+  /** Start playing as soon as the lesson opens (Drive mode). */
+  autoStart?: boolean;
+  /** The lesson was read to the end. */
+  onEnded?: () => void;
+  /** Shown on the phone's lock screen and car display. */
+  meta?: { title: string; book: string };
 }) {
   const { me } = useApp();
   const narratorAllowed = !!offlineParts || !!(me?.aiVoice && versionId);
@@ -251,10 +274,14 @@ export default function Player({
   const onPosRef = useRef(onPosition);
   const indexRef = useRef(index);
   const cancelled = useRef(false);
+  const onEndedRef = useRef(onEnded);
 
   useEffect(() => {
     onPosRef.current = onPosition;
   }, [onPosition]);
+  useEffect(() => {
+    onEndedRef.current = onEnded;
+  }, [onEnded]);
   useEffect(() => {
     indexRef.current = index;
   }, [index]);
@@ -281,6 +308,7 @@ export default function Player({
       n.index = startAt;
       n.rate = savedRate;
       n.onChange = onChange;
+      n.onEnd = () => onEndedRef.current?.();
       n.onBlocked = () => setNarr({ state: 'ready', note: 'Tap Play to start the narrator.' });
       speaker.current = n;
       if (offlineParts) n.parts = offlineParts;
@@ -301,6 +329,7 @@ export default function Player({
     s.index = startAt;
     s.rate = savedRate;
     s.onChange = onChange;
+    s.onEnd = () => onEndedRef.current?.();
     const load = () => {
       s.voices = window.speechSynthesis.getVoices();
       setHasHindi(s.voices.length === 0 || s.voices.some((v) => /^hi/i.test(v.lang)));
@@ -323,7 +352,7 @@ export default function Player({
   // Narrator not available: carry on with the phone voice (just for now; the choice is not saved).
   const fallBackToPhone = (why: string) => {
     setNarr({ state: 'unavailable' });
-    setFallback(`${why} Using the phone voice. Tap Play.`);
+    setFallback(autoStart ? `${why} Using the phone voice.` : `${why} Using the phone voice. Tap Play.`);
     setEngine('phone');
   };
 
@@ -363,6 +392,42 @@ export default function Player({
     }
     speaker.current?.play();
   };
+
+  // Drive mode: start on its own once the lesson is ready.
+  const onPlayRef = useRef(onPlay);
+  useEffect(() => {
+    onPlayRef.current = onPlay;
+  });
+  // Once per voice engine: if the narrator fails, Drive mode carries on with the phone voice.
+  const startedFor = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!autoStart || startedFor.current === useNarrator) return;
+    startedFor.current = useNarrator;
+    const t = setTimeout(() => onPlayRef.current(), 400);
+    return () => clearTimeout(t);
+  }, [autoStart, useNarrator]);
+
+  // Lock screen / car controls.
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !meta) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: meta.title, artist: meta.book, album: 'SHRAVAN' });
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (!speaker.current?.playing) onPlayRef.current();
+      });
+      navigator.mediaSession.setActionHandler('pause', () => speaker.current?.pause());
+      navigator.mediaSession.setActionHandler('nexttrack', onEndedRef.current ? () => onEndedRef.current?.() : null);
+      navigator.mediaSession.setActionHandler('previoustrack', () => speaker.current?.jump(-3));
+    } catch {}
+    return () => {
+      try {
+        for (const a of ['play', 'pause', 'nexttrack', 'previoustrack'] as MediaSessionAction[]) navigator.mediaSession.setActionHandler(a, null);
+      } catch {}
+    };
+  }, [meta]);
+  useEffect(() => {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+  }, [playing]);
 
   const switchTo = (e: Engine) => {
     speaker.current?.pause();
