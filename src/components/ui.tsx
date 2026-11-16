@@ -44,14 +44,23 @@ export function Icon({ name, size = 22 }: { name: string; size?: number }) {
 }
 
 /** The SHRAVAN emblem (placeholder until the final logo). */
+/**
+ * The SHRAVAN mark ("three ripples": listen, reflect, apply), drawn from the final logo master.
+ * Colours follow the view: Basic = navy arcs + saffron dot, Peacock = emerald arcs + gold dot.
+ * Below 32 px the arcs are drawn heavier, as the logo guide asks.
+ */
 export function Emblem({ size = 140 }: { size?: number }) {
+  const small = size <= 32;
   return (
-    <svg width={size} height={size} viewBox="0 0 168 168" aria-hidden fill="none">
-      <circle cx="84" cy="84" r="80" stroke="var(--border)" strokeWidth="1.5" />
-      <circle cx="84" cy="84" r="62" stroke="var(--accent)" strokeOpacity="0.55" strokeWidth="1.5" />
-      <circle cx="84" cy="84" r="44" fill="var(--accent)" />
-      <path d="M64 76c7-4 14-4 20 0v22c-6-4-13-4-20 0V76z" stroke="var(--accent-ink)" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M104 76c-7-4-14-4-20 0v22c6-4 13-4 20 0V76z" stroke="var(--accent-ink)" strokeWidth="2.5" strokeLinejoin="round" />
+    <svg width={(size * 167.4) / 180} height={size} viewBox="0 0 167.4 180" role="img" aria-label="SHRAVAN">
+      <g transform="translate(-10 -10)">
+        <g fill="none" stroke="var(--logo-arc)" strokeWidth={small ? 15 : 10} strokeLinecap="round">
+          <path d="M157.3 140.2A70 70 0 1 1 157.3 59.8" />
+          <path d="M140.5 132.5A46 46 0 1 1 140.5 67.5" />
+          <path d="M127 119.1A22 22 0 1 1 127 80.9" />
+        </g>
+        <circle cx="116" cy="100" r={small ? 11 : 8} fill="var(--logo-dot)" />
+      </g>
     </svg>
   );
 }
