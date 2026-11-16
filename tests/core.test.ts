@@ -111,3 +111,13 @@ describe('verifyLesson: nothing is attributed to the book unless it is in the bo
     expect(s.some((x) => x.startsWith('Key takeaway'))).toBe(true);
   });
 });
+
+describe('levelFor', () => {
+  it('keeps the chosen level only for English', async () => {
+    const { levelFor } = await import('../src/lib/config');
+    expect(levelFor('english', 'basic')).toBe('basic');
+    expect(levelFor('english', 'advanced')).toBe('advanced');
+    expect(levelFor('hindi', 'basic')).toBe('normal');
+    expect(levelFor('mix', 'advanced')).toBe('normal');
+  });
+});
