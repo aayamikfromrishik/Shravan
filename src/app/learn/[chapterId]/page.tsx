@@ -315,7 +315,7 @@ export default function LearnPage({ params }: { params: Promise<{ chapterId: str
         </span>
         <h1 style={{ fontSize: 23 }}>{lesson.title || d.chapter.title}</h1>
         <span className="tiny muted">
-          {MODE_NAME[settings.mode]} · {LEVEL_NAME[settings.level]} · {LANG_NAME[settings.lang]} ·{' '}
+          {MODE_NAME[settings.mode]} · {settings.lang === 'english' ? `${LEVEL_NAME[settings.level]} · ` : ''}{LANG_NAME[settings.lang]} ·{' '}
           <Link href={`/book/${d.book.id}/setup`}>Change</Link>
         </span>
       </div>
