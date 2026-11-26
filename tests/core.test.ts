@@ -121,3 +121,19 @@ describe('levelFor', () => {
     expect(levelFor('mix', 'advanced')).toBe('normal');
   });
 });
+
+describe('checkChapter', () => {
+  it('flags empty, very short and very long chapters', async () => {
+    const { checkChapter } = await import('../src/lib/chapter-check');
+    expect(checkChapter('').notes[0]).toMatch(/no text/);
+    expect(checkChapter('Chapter One. Contents.').notes[0]).toMatch(/Very short/);
+    expect(checkChapter('word '.repeat(13000)).notes.join(' ')).toMatch(/Very long/);
+    const normal = 'The wise man saves a part of all he earns and spends with care. '.repeat(40);
+    expect(checkChapter(normal).notes).toEqual([]);
+  });
+  it('spots scanned-looking text', async () => {
+    const { checkChapter } = await import('../src/lib/chapter-check');
+    const garbled = 'T h e  w i s e  m a n  s a v e s  % $ # @ '.repeat(60);
+    expect(checkChapter(garbled).notes.join(' ')).toMatch(/poor scan/);
+  });
+});
