@@ -132,12 +132,27 @@ class NarratorSpeaker implements Engine_ {
   onEnd: () => void = () => {};
   private onTime = () => this.track();
   private onEnded = () => this.next();
+  private switching = false; // true while we change to the next part ourselves
+  // The phone paused or resumed the sound itself (a call, headphones out, lock-screen buttons): keep the screen in step.
+  private onPaused = () => {
+    if (this.switching || this.audio.ended || !this.playing) return;
+    this.playing = false;
+    this.onChange(this.index, false);
+  };
+  private onPlayed = () => {
+    this.switching = false;
+    if (this.playing) return;
+    this.playing = true;
+    this.onChange(this.index, true);
+  };
 
   constructor() {
     this.audio.pause();
     this.audio.preload = 'auto';
     this.audio.addEventListener('timeupdate', this.onTime);
     this.audio.addEventListener('ended', this.onEnded);
+    this.audio.addEventListener('pause', this.onPaused);
+    this.audio.addEventListener('playing', this.onPlayed);
   }
   // Where a sentence sits inside its part, as a share of the part's length (by characters).
   private share(p: Part, i: number) {
@@ -178,27 +193,44 @@ class NarratorSpeaker implements Engine_ {
       this.onEnd();
     }
   }
+  private start() {
+    this.audio.playbackRate = this.rate;
+    this.audio.play().catch(() => {
+      // Some phones block sound that does not start from a tap.
+      this.switching = false;
+      this.playing = false;
+      this.onChange(this.index, false);
+      this.onBlocked();
+    });
+  }
   private load(i: number, autoplay: boolean) {
     const n = this.partFor(i);
     const p = this.parts[n];
-    const seek = () => {
-      if (this.audio.duration) this.audio.currentTime = this.share(p, i) * this.audio.duration;
-      this.audio.playbackRate = this.rate;
-      if (autoplay) {
-        this.audio.play().catch(() => {
-          // Some phones block sound that does not start from a tap.
-          this.playing = false;
-          this.onChange(this.index, false);
-          this.onBlocked();
-        });
-      }
-    };
+    const at = this.share(p, i);
     if (n !== this.partIdx) {
       this.partIdx = n;
+      this.switching = autoplay;
       this.audio.src = p.url;
-      this.audio.addEventListener('loadedmetadata', seek, { once: true });
-      this.audio.load();
-    } else seek();
+      if (at > 0) {
+        // Start part-way through: wait until the length is known, then jump there.
+        this.audio.addEventListener(
+          'loadedmetadata',
+          () => {
+            if (this.audio.duration) this.audio.currentTime = at * this.audio.duration;
+            if (autoplay) this.start();
+          },
+          { once: true },
+        );
+        this.audio.load();
+      } else if (autoplay) {
+        // From the top of a part (the usual case when one part ends and the next begins): play at once,
+        // still inside the phone's "sound ended" moment, so it carries on with the screen off.
+        this.start();
+      }
+    } else {
+      if (this.audio.duration) this.audio.currentTime = at * this.audio.duration;
+      if (autoplay) this.start();
+    }
     this.onChange(i, autoplay);
   }
   play() {
@@ -224,6 +256,8 @@ class NarratorSpeaker implements Engine_ {
     this.playing = false;
     this.audio.removeEventListener('timeupdate', this.onTime);
     this.audio.removeEventListener('ended', this.onEnded);
+    this.audio.removeEventListener('pause', this.onPaused);
+    this.audio.removeEventListener('playing', this.onPlayed);
     this.audio.pause();
   }
 }
@@ -490,6 +524,11 @@ export default function Player({
             {useNarrator ? 'Use phone voice' : 'Use narrator'}
           </button>
         </div>
+      )}
+      {!useNarrator && (
+        <span className="tiny" style={{ color: 'var(--hero-muted)' }}>
+          The phone voice stops when the screen turns off.{narratorAllowed ? ' Use the narrator to keep listening with the screen off.' : ''}
+        </span>
       )}
       {!useNarrator && lang !== 'english' && !hasHindi && (
         <span className="tiny" style={{ color: 'var(--hero-muted)' }}>
