@@ -301,3 +301,6 @@ alter table journeys enable row level security;
 alter table profiles add column if not exists drive_mode boolean not null default false;
 alter table progress add column if not exists questions_pending boolean not null default false;
 create index if not exists progress_pending_idx on progress(user_id) where questions_pending;
+
+-- 007: why a lesson could not be written (shown in Admin → Create in bulk → Problem chapters).
+alter table chapter_versions add column if not exists error text;
