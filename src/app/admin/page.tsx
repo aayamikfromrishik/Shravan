@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, daysLeft, downloadBookFile, fmtDate, uploadBook } from '@/lib/client';
+import { api, ApiError, daysLeft, downloadBookFile, fmtDate, uploadBook } from '@/lib/client';
 import { SUBJECTS } from '@/lib/config';
 import { useApp } from '@/components/AppProvider';
 import { GOOD_FOR_LESSONS, VOICE_CATALOG } from '@/lib/voices-catalog';
@@ -904,6 +904,63 @@ function Checks<T extends string>({ names, value, onChange }: { names: Record<T,
   );
 }
 
+interface ChapterCheckUI {
+  words: number;
+  notes: string[];
+}
+interface ProblemUI {
+  item: BulkItemUI;
+  title?: string;
+  what: 'lesson' | 'narration';
+  reason: string;
+  check?: ChapterCheckUI;
+}
+const sameItem = (a: BulkItemUI, b: BulkItemUI) => a.chapterId === b.chapterId && a.part === b.part && a.mode === b.mode && a.level === b.level && a.lang === b.lang;
+
+/** Failed or stopped lessons and narrations, grouped by chapter, with what the chapter's text looks like. */
+function ProblemList({ problems, onRetry, running }: { problems: ProblemUI[]; onRetry: () => void; running: boolean }) {
+  const groups: { key: string; head: string; check?: ChapterCheckUI; rows: ProblemUI[] }[] = [];
+  for (const p of problems) {
+    const key = p.item.chapterId;
+    let g = groups.find((x) => x.key === key);
+    if (!g) {
+      g = { key, head: `${p.item.book ? `${p.item.book} · ` : ''}Ch ${p.item.idx}${p.title ? `. ${p.title}` : ''}`, check: p.check, rows: [] };
+      groups.push(g);
+    }
+    if (!g.check && p.check) g.check = p.check;
+    g.rows.push(p);
+  }
+  return (
+    <div className="card col" style={{ gap: 10 }}>
+      <div className="row" style={{ gap: 8, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <b>Problem chapters ({groups.length})</b>
+        <button className="btn small" onClick={onRetry} disabled={running}>
+          Retry only these ({problems.length})
+        </button>
+      </div>
+      <span className="tiny muted">Retrying makes only what is listed here. A lesson that was too long is rewritten shorter automatically.</span>
+      {groups.map((g) => (
+        <div key={g.key} className="col" style={{ gap: 4, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+          <b className="small">{g.head}</b>
+          {g.check && (
+            <span className="tiny muted">
+              Chapter text: {g.check.words.toLocaleString('en-IN')} words.{' '}
+              {g.check.notes.length ? g.check.notes.join(' ') : 'The text itself looks normal.'}
+            </span>
+          )}
+          {g.rows.map((p, i) => (
+            <span key={i} className="tiny">
+              ✗ {p.item.part === 'free' ? 'Free part · ' : ''}
+              {MODE_NAMES[p.item.mode]} · {p.item.lang === 'english' ? `${LEVEL_NAMES[p.item.level]} · ` : ''}
+              {LANG_NAMES[p.item.lang]} — {p.what}: {p.reason}
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface PickSection {
   id: string;
   name: string;
@@ -929,6 +986,8 @@ function BulkTab() {
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(0);
   const [log, setLog] = useState<string[]>([]);
+  const [total, setTotal] = useState(0);
+  const [problems, setProblems] = useState<ProblemUI[] | null>(null);
   const stop = useRef(false);
 
   useEffect(() => {
@@ -950,6 +1009,7 @@ function BulkTab() {
 
   useEffect(() => {
     setPlan(null);
+    setProblems(null);
     if (!bookId) return setChapters([]);
     api<{ chapters: { idx: number; title: string }[] }>(`/api/books/${bookId}`)
       .then((r) => {
@@ -975,28 +1035,70 @@ function BulkTab() {
       setError((e as Error).message);
     }
   };
-  const run = async () => {
-    if (!plan) return;
+  const findProblems = async () => {
+    setError(null);
+    try {
+      const r = await api<{ problems: ProblemUI[] }>('/api/admin/generate/problems', { body: many ? { bookIds: pickedIds } : { bookId } });
+      setProblems(r.problems);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+  const run = async (items: BulkItemUI[], withAudio: boolean) => {
+    if (!items.length) return;
     stop.current = false;
     setRunning(true);
     setDone(0);
+    setTotal(items.length);
     setLog([]);
+    const found: ProblemUI[] = [];
+    const add = (p: ProblemUI) => found.push(p);
     let i = 0;
     const next = async (): Promise<void> => {
-      while (!stop.current && i < plan.items.length) {
-        const it = plan.items[i++];
-        const label = `${many && it.book ? `${it.book} · ` : ''}Ch ${it.idx}${it.part === 'free' ? ' (free part)' : ''} · ${MODE_NAMES[it.mode]} · ${LEVEL_NAMES[it.level]} · ${LANG_NAMES[it.lang]}`;
+      while (!stop.current && i < items.length) {
+        const it = items[i++];
+        const label = `${many && it.book ? `${it.book} · ` : ''}Ch ${it.idx}${it.part === 'free' ? ' (free part)' : ''} · ${MODE_NAMES[it.mode]} · ${it.lang === 'english' ? `${LEVEL_NAMES[it.level]} · ` : ''}${LANG_NAMES[it.lang]}`;
+        const timedOut = (e: unknown) => (e as ApiError).status === 504 || /timeout/i.test((e as Error).message);
+        type R = { lesson: string; audio: string; reason?: string; check?: ChapterCheckUI };
         try {
-          const r = await api<{ lesson: string; audio: string }>('/api/admin/generate', { body: { item: it, audio } });
-          setLog((l) => [`${r.lesson === 'failed' ? '✗' : '✓'} ${label}: lesson ${r.lesson}${audio ? `, narration ${r.audio}` : ''}`, ...l]);
+          // The lesson and its narration are asked for separately, so each gets its own 5 minutes.
+          const r = await api<R>('/api/admin/generate', { body: { item: it, audio: false } });
+          if (r.lesson === 'failed' || r.lesson === 'busy') {
+            setLog((l) => [`✗ ${label}: lesson ${r.lesson} — ${r.reason || ''}`, ...l]);
+            add({ item: it, what: 'lesson', reason: r.reason || 'Failed.', check: r.check });
+          } else if (withAudio) {
+            try {
+              const a = await api<R>('/api/admin/generate', { body: { item: it, audio: true } });
+              const ok = a.audio === 'ready';
+              setLog((l) => [`${ok ? '✓' : '✗'} ${label}: lesson ${r.lesson}, narration ${a.audio}${a.reason ? ` — ${a.reason}` : ''}`, ...l]);
+              if (!ok) add({ item: it, what: 'narration', reason: a.reason || 'Failed.' });
+            } catch (e) {
+              const reason = timedOut(e) ? 'The recording took more than 5 minutes and was stopped. A retry usually works.' : (e as Error).message;
+              setLog((l) => [`✗ ${label}: lesson ${r.lesson}, narration — ${reason}`, ...l]);
+              add({ item: it, what: 'narration', reason });
+            }
+          } else setLog((l) => [`✓ ${label}: lesson ${r.lesson}`, ...l]);
         } catch (e) {
-          setLog((l) => [`✗ ${label}: ${(e as Error).message}`, ...l]);
+          const reason = timedOut(e) ? 'It took more than 5 minutes and was stopped. A retry writes a shorter version automatically.' : (e as Error).message;
+          setLog((l) => [`✗ ${label}: lesson — ${reason}`, ...l]);
+          add({ item: it, what: 'lesson', reason });
         }
         setDone((d) => d + 1);
       }
     };
     await Promise.all([next(), next()]); // two at a time
     setRunning(false);
+    setPlan(null);
+    // Fill in chapter checks and titles from the server's view (it also catches anything stopped part-way).
+    try {
+      const r = await api<{ problems: ProblemUI[] }>('/api/admin/generate/problems', { body: many ? { bookIds: pickedIds } : { bookId } });
+      const fromServer = r.problems;
+      const merged = [...fromServer];
+      for (const p of found) if (!merged.some((m) => sameItem(m.item, p.item) && m.what === p.what)) merged.push(p);
+      setProblems(merged);
+    } catch {
+      setProblems(found);
+    }
   };
 
   if (!books) return error ? <ErrorNote error={error} /> : <Loading />;
@@ -1117,8 +1219,11 @@ function BulkTab() {
           <button className="btn small ghost" onClick={makePlan} disabled={(many ? !pickedIds.length : !bookId) || running}>
             Check what it will cost
           </button>
+          <button className="btn small ghost" onClick={findProblems} disabled={(many ? !pickedIds.length : !bookId) || running}>
+            Find problem chapters
+          </button>
           {plan && !running && (
-            <button className="btn small" onClick={run} disabled={!plan.lessonsToMake && !plan.audioToMake}>
+            <button className="btn small" onClick={() => run(plan.items, audio)} disabled={!plan.lessonsToMake && !plan.audioToMake}>
               Create {plan.total} version{plan.total === 1 ? '' : 's'}
             </button>
           )}
@@ -1138,19 +1243,25 @@ function BulkTab() {
             {plan.total} versions: {plan.lessonsToMake} lessons to write{audio ? ` and ${plan.audioToMake} narrations to record` : ''}. Estimated cost: <b>about ₹{plan.estimateInr}</b> (a rough guide; actual cost shows in Usage &amp; costs). Time: about {Math.max(1, Math.round(((plan.lessonsToMake * 40 + plan.audioToMake * 20) / 2) / 60))} min.
           </p>
         )}
-        {(running || done > 0) && plan && (
+        {(running || done > 0) && total > 0 && (
           <div className="bar" aria-label="Progress" style={{ height: 6, background: 'var(--border)', borderRadius: 3 }}>
-            <div style={{ width: `${Math.round((done / plan.total) * 100)}%`, height: '100%', background: 'var(--accent)', borderRadius: 3 }} />
+            <div style={{ width: `${Math.round((done / total) * 100)}%`, height: '100%', background: 'var(--accent)', borderRadius: 3 }} />
           </div>
         )}
         {log.length > 0 && (
           <pre className="tiny" style={{ whiteSpace: 'pre-wrap', margin: 0, maxHeight: 320, overflow: 'auto' }}>
-            {done}/{plan?.total} done{running ? '…' : ''}
+            {done}/{total} done{running ? '…' : ''}
             {'\n'}
             {log.join('\n')}
           </pre>
         )}
       </div>
+      {problems && problems.length === 0 && (
+        <p className="small muted" style={{ margin: 0 }}>
+          No problem chapters: nothing has failed or stopped part-way for {many ? 'the ticked books' : 'this book'}.
+        </p>
+      )}
+      {problems && problems.length > 0 && <ProblemList problems={problems} running={running} onRetry={() => run(problems.map((p) => p.item), audio || problems.some((p) => p.what === 'narration'))} />}
     </section>
   );
 }
