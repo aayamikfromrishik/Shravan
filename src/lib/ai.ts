@@ -20,6 +20,13 @@ export interface Usage {
   cache_read_tokens: number;
 }
 
+/** A lesson problem with a short code, so the admin panel can explain it and retry sensibly. */
+export class LessonError extends Error {
+  constructor(public code: 'too_long' | 'refused' | 'bad_reply', message: string) {
+    super(message);
+  }
+}
+
 async function callJson<T>(opts: {
   system: string;
   cachedContext?: string; // the chapter text: cached so other modes/levels reuse it
@@ -40,11 +47,20 @@ async function callJson<T>(opts: {
     messages: [{ role: 'user', content }],
     output_config: { effort: opts.effort ?? 'medium', format: { type: 'json_schema', schema: opts.schema } },
   });
+  if (res.stop_reason === 'max_tokens' || res.stop_reason === 'model_context_window_exceeded') {
+    throw new LessonError('too_long', `The reply hit the length limit (${opts.maxTokens} tokens).`);
+  }
+  if (res.stop_reason === 'refusal') throw new LessonError('refused', 'The AI declined to write about this text.');
   const text = res.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
     .map((b) => b.text)
     .join('');
-  const data = JSON.parse(text) as T;
+  let data: T;
+  try {
+    data = JSON.parse(text) as T;
+  } catch {
+    throw new LessonError('bad_reply', 'The reply could not be read.');
+  }
   return {
     data,
     usage: {
@@ -213,6 +229,7 @@ export async function generateLesson(args: {
   level: Level;
   lang: Lang;
   subject: string | null;
+  compact?: boolean; // a shorter lesson, used when the full one was too long to write in one go
 }): Promise<{ lesson: Lesson; removed: number; usage: Usage }> {
   const context = `BOOK: ${args.bookTitle}${args.author ? ` by ${args.author}` : ''}
 CHAPTER: ${args.chapterTitle}
@@ -227,10 +244,16 @@ ${args.chapterText}
     subjectRule(args.subject),
     'Also write: one quick_check multiple-choice question (3 options) that tests whether the main idea landed, plus a simpler re-explanation for anyone who misses it; and exactly 3 reflection_questions that ask about the learner\'s own life (not a quiz) and connect to this chapter.',
     'coverage_note: one short sentence only if the text is partial or unclear, otherwise null.',
+    args.compact
+      ? 'Keep this lesson compact: at most 4 sections (Complete mode), about 80 words per explanation, at most 2 examples, short key lessons. Cover the chapter\'s main points only.'
+      : '',
   ]
     .filter(Boolean)
     .join('\n');
-  const maxTokens = args.mode === 'complete' ? 9000 : args.mode === 'examples' ? 5000 : 3500;
+  // Hindi (Devanagari) takes far more tokens than English for the same lesson, so it gets more room.
+  const base = args.mode === 'complete' ? 9000 : args.mode === 'examples' ? 5000 : 3500;
+  const factor = args.lang === 'hindi' ? 1.8 : args.lang === 'mix' ? 1.5 : 1;
+  const maxTokens = Math.min(20000, Math.round(base * factor));
   const { data, usage } = await callJson<Lesson>({ system: RULES, cachedContext: context, prompt, schema: lessonSchema, maxTokens });
   const { lesson, removed } = verifyLesson(data, args.chapterText);
   return { lesson, removed, usage };

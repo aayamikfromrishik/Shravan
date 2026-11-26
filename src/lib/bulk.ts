@@ -1,6 +1,7 @@
 // Admin bulk creation: plan (what is missing, what it may cost) and make one item at a time.
 import { db, getBook } from './server';
-import { getOrCreateVersion } from './versions';
+import { explainLessonError, getOrCreateVersion } from './versions';
+import { checkChapter, type ChapterCheck } from './chapter-check';
 import { getOrCreateAudio, getVoiceSettings, INR_PER_10K_CHARS, pickVoice } from './voice';
 import { levelFor, type Lang, type Level, type Mode, type Part } from './config';
 import type { Lesson } from './lesson';
@@ -114,11 +115,89 @@ export async function makeOne(it: BulkItem, audio: boolean) {
   const { data: before } = await sb.from('chapter_versions').select('id,status').match(key).maybeSingle();
   const existed = before?.status === 'ready';
   const v = await getOrCreateVersion({ book, chapter, part: it.part, mode: it.mode, level: it.level, lang: it.lang });
-  if (v.status !== 'ready' || !v.versionId || !v.lesson) return { lesson: v.status === 'generating' ? 'busy' : 'failed', audio: 'skipped' };
+  if (v.status !== 'ready' || !v.versionId || !v.lesson) {
+    const busy = v.status === 'generating';
+    return {
+      lesson: busy ? 'busy' : 'failed',
+      audio: 'not tried',
+      reason: busy ? 'An earlier try is still writing this lesson. Retry in about 5 minutes.' : v.reason || explainLessonError(null),
+      check: busy ? undefined : checkChapter(chapter.body),
+    };
+  }
   let audioState = 'skipped';
+  let reason: string | undefined;
   if (audio) {
     const a = await getOrCreateAudio({ versionId: v.versionId, lesson: v.lesson as Lesson, lang: it.lang, subject: book.subject });
-    audioState = a.status === 'ready' ? 'ready' : a.status === 'generating' ? 'busy' : `${a.status}: ${'reason' in a ? a.reason : ''}`;
+    audioState = a.status === 'ready' ? 'ready' : a.status === 'generating' ? 'busy' : 'failed';
+    if (a.status === 'generating') reason = 'An earlier try is still recording this narration. Retry in about 5 minutes.';
+    else if (a.status !== 'ready') reason = 'reason' in a && a.reason ? `Narration: ${a.reason}` : 'Narration failed.';
   }
-  return { lesson: existed ? 'existing' : 'made', audio: audioState };
+  return { lesson: existed ? 'existing' : 'made', audio: audioState, reason };
+}
+
+export interface Problem {
+  item: BulkItem;
+  title: string; // chapter title
+  what: 'lesson' | 'narration';
+  reason: string;
+  check: ChapterCheck;
+}
+
+const STUCK_MS = 6 * 60 * 1000; // longer than one request may run, so it has surely stopped
+
+/** Lessons and narrations of these books that failed or stopped part-way, with a look at each chapter's text. */
+export async function findProblems(bookIds: string[]): Promise<Problem[]> {
+  const sb = db();
+  const problems: Problem[] = [];
+  for (const bookId of bookIds) {
+    const book = await getBook(bookId);
+    const { data: chapters } = await sb.from('chapters').select('id,idx,title,body').eq('book_id', bookId).order('idx');
+    const byId = new Map((chapters || []).map((c) => [c.id as string, c]));
+    const ids = [...byId.keys()];
+    const checks = new Map<string, ChapterCheck>();
+    const checkOf = (id: string) => {
+      if (!checks.has(id)) checks.set(id, checkChapter(byId.get(id)?.body || ''));
+      return checks.get(id)!;
+    };
+    const old = (t: string) => Date.now() - new Date(t).getTime() > STUCK_MS;
+    for (let i = 0; i < ids.length; i += 80) {
+      const some = ids.slice(i, i + 80);
+      // Lessons that failed or stopped part-way ("error" needs migration 007; fall back without it).
+      let rows = (await sb.from('chapter_versions').select('id,chapter_id,part,mode,level,lang,status,created_at,error').in('chapter_id', some).neq('status', 'ready')).data;
+      if (!rows) rows = ((await sb.from('chapter_versions').select('id,chapter_id,part,mode,level,lang,status,created_at').in('chapter_id', some).neq('status', 'ready')).data || []).map((r) => ({ ...r, error: null }));
+      for (const r of rows) {
+        if (r.status === 'generating' && !old(r.created_at)) continue; // still being written right now
+        const c = byId.get(r.chapter_id)!;
+        problems.push({
+          item: { book: book.title, chapterId: r.chapter_id, idx: c.idx, part: r.part, mode: r.mode, level: r.level, lang: r.lang },
+          title: c.title,
+          what: 'lesson',
+          reason: explainLessonError(r.status === 'generating' ? 'stopped' : r.error),
+          check: checkOf(r.chapter_id),
+        });
+      }
+      // Narrations that failed or stopped part-way, for lessons that have no finished narration.
+      const { data: audio } = await sb
+        .from('lesson_audio')
+        .select('version_id,status,error,created_at,chapter_versions!inner(chapter_id,part,mode,level,lang)')
+        .in('chapter_versions.chapter_id', some);
+      const readyFor = new Set((audio || []).filter((a) => a.status === 'ready').map((a) => a.version_id));
+      const listed = new Set<string>();
+      for (const a of audio || []) {
+        if (a.status === 'ready' || readyFor.has(a.version_id) || listed.has(a.version_id)) continue;
+        if (a.status === 'generating' && !old(a.created_at)) continue;
+        listed.add(a.version_id);
+        const v = (Array.isArray(a.chapter_versions) ? a.chapter_versions[0] : a.chapter_versions) as { chapter_id: string; part: Part; mode: Mode; level: Level; lang: Lang };
+        const c = byId.get(v.chapter_id)!;
+        problems.push({
+          item: { book: book.title, chapterId: v.chapter_id, idx: c.idx, part: v.part, mode: v.mode, level: v.level, lang: v.lang },
+          title: c.title,
+          what: 'narration',
+          reason: a.status === 'generating' ? 'The recording stopped part-way, most likely because it took more than 5 minutes. A retry usually works.' : `Narration: ${a.error || 'failed without a reason.'}`,
+          check: checkOf(v.chapter_id),
+        });
+      }
+    }
+  }
+  return problems.sort((a, b) => (a.item.book || '').localeCompare(b.item.book || '') || a.item.idx - b.item.idx);
 }
